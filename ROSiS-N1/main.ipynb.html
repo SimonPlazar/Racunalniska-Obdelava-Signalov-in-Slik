@@ -1,0 +1,172 @@
+<html>
+<head>
+<title>main.ipynb</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #7a7e85;}
+.s1 { color: #cf8e6d;}
+.s2 { color: #bcbec4;}
+.s3 { color: #bcbec4;}
+.s4 { color: #2aacb8;}
+.s5 { color: #6aab73;}
+.ls0 { height: 1px; border-width: 0; color: #43454a; background-color:#43454a}
+</style>
+</head>
+<body bgcolor="#1e1f22">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+main.ipynb</font>
+</center></td></tr></table>
+<pre><span class="s0">#%% 
+</span><span class="s1">from </span><span class="s2">time </span><span class="s1">import </span><span class="s2">sleep</span>
+
+<span class="s1">import </span><span class="s2">sounddevice </span><span class="s1">as </span><span class="s2">sd</span>
+<span class="s1">import </span><span class="s2">numpy </span><span class="s1">as </span><span class="s2">np</span>
+<span class="s1">import </span><span class="s2">time</span>
+
+<span class="s2">duration </span><span class="s3">= </span><span class="s4">5  </span><span class="s0"># s</span>
+<span class="s2">sample_rate </span><span class="s3">= </span><span class="s4">44100  </span><span class="s0"># 44.1 kHz</span><hr class="ls0"><span class="s0">#%% 
+# Record audio</span>
+<span class="s2">time</span><span class="s3">.</span><span class="s2">sleep</span><span class="s3">(</span><span class="s4">2</span><span class="s3">)</span>
+<span class="s2">audio_data </span><span class="s3">= </span><span class="s2">sd</span><span class="s3">.</span><span class="s2">rec</span><span class="s3">(</span><span class="s2">int</span><span class="s3">(</span><span class="s2">duration </span><span class="s3">* </span><span class="s2">sample_rate</span><span class="s3">), </span><span class="s2">samplerate</span><span class="s3">=</span><span class="s2">sample_rate</span><span class="s3">, </span><span class="s2">channels</span><span class="s3">=</span><span class="s4">1</span><span class="s3">, </span><span class="s2">dtype</span><span class="s3">=</span><span class="s5">'float32'</span><span class="s3">)</span>
+<span class="s2">sd</span><span class="s3">.</span><span class="s2">wait</span><span class="s3">()</span><hr class="ls0"><span class="s0">#%% 
+# Playback audio</span>
+<span class="s2">sd</span><span class="s3">.</span><span class="s2">play</span><span class="s3">(</span><span class="s2">audio_data</span><span class="s3">, </span><span class="s2">samplerate</span><span class="s3">=</span><span class="s2">sample_rate</span><span class="s3">)</span>
+<span class="s2">sd</span><span class="s3">.</span><span class="s2">wait</span><span class="s3">()</span><hr class="ls0"><span class="s0">#%% 
+</span><span class="s1">from </span><span class="s2">scipy</span><span class="s3">.</span><span class="s2">io</span><span class="s3">.</span><span class="s2">wavfile </span><span class="s1">import </span><span class="s2">write</span>
+<span class="s0"># Convert float32 (-1 to 1) to int16 (-32768 to 32767) for WAV format</span>
+<span class="s2">audio_int16 </span><span class="s3">= (</span><span class="s2">audio_data </span><span class="s3">* </span><span class="s4">32767</span><span class="s3">).</span><span class="s2">astype</span><span class="s3">(</span><span class="s2">np</span><span class="s3">.</span><span class="s2">int16</span><span class="s3">)</span>
+
+<span class="s0"># Save as WAV file</span>
+<span class="s2">filename </span><span class="s3">= </span><span class="s5">&quot;erozija2.wav&quot;</span>
+<span class="s2">write</span><span class="s3">(</span><span class="s2">filename</span><span class="s3">, </span><span class="s2">sample_rate</span><span class="s3">, </span><span class="s2">audio_int16</span><span class="s3">)</span>
+<span class="s2">print</span><span class="s3">(</span><span class="s5">f&quot;Saved as </span><span class="s1">{</span><span class="s2">filename</span><span class="s1">}</span><span class="s5">&quot;</span><span class="s3">)</span><hr class="ls0"><span class="s0">#%% 
+# Graph audio data</span>
+<span class="s1">import </span><span class="s2">matplotlib</span><span class="s3">.</span><span class="s2">pyplot </span><span class="s1">as </span><span class="s2">plt</span>
+
+<span class="s0"># Convert to 1D array</span>
+<span class="s2">audio_data </span><span class="s3">= </span><span class="s2">audio_data</span><span class="s3">.</span><span class="s2">flatten</span><span class="s3">() </span><span class="s0"># (sample_rate, 1) -&gt; (sample_rate,)</span>
+
+<span class="s0"># Create time axis</span>
+<span class="s2">time_axis </span><span class="s3">= </span><span class="s2">np</span><span class="s3">.</span><span class="s2">linspace</span><span class="s3">(</span><span class="s4">0</span><span class="s3">, </span><span class="s2">duration</span><span class="s3">, </span><span class="s2">len</span><span class="s3">(</span><span class="s2">audio_data</span><span class="s3">))</span>
+
+<span class="s0"># Plot waveform</span>
+<span class="s2">plt</span><span class="s3">.</span><span class="s2">figure</span><span class="s3">(</span><span class="s2">figsize</span><span class="s3">=(</span><span class="s4">12</span><span class="s3">, </span><span class="s4">4</span><span class="s3">))</span>
+<span class="s2">plt</span><span class="s3">.</span><span class="s2">plot</span><span class="s3">(</span><span class="s2">time_axis</span><span class="s3">, </span><span class="s2">audio_data</span><span class="s3">, </span><span class="s2">color</span><span class="s3">=</span><span class="s5">'blue'</span><span class="s3">, </span><span class="s2">alpha</span><span class="s3">=</span><span class="s4">0.7</span><span class="s3">, </span><span class="s2">linewidth</span><span class="s3">=</span><span class="s4">0.8</span><span class="s3">)</span>
+<span class="s2">plt</span><span class="s3">.</span><span class="s2">xlabel</span><span class="s3">(</span><span class="s5">&quot;Time (seconds)&quot;</span><span class="s3">)</span>
+<span class="s2">plt</span><span class="s3">.</span><span class="s2">ylabel</span><span class="s3">(</span><span class="s5">&quot;Amplitude&quot;</span><span class="s3">)</span>
+<span class="s2">plt</span><span class="s3">.</span><span class="s2">title</span><span class="s3">(</span><span class="s5">&quot;Audio Waveform&quot;</span><span class="s3">)</span>
+<span class="s2">plt</span><span class="s3">.</span><span class="s2">grid</span><span class="s3">()</span>
+<span class="s2">plt</span><span class="s3">.</span><span class="s2">show</span><span class="s3">()</span><hr class="ls0"><span class="s0">#%% 
+</span><span class="s1">import </span><span class="s2">os</span>
+<span class="s1">import </span><span class="s2">plotly</span><span class="s3">.</span><span class="s2">graph_objects </span><span class="s1">as </span><span class="s2">go</span>
+<span class="s1">from </span><span class="s2">scipy</span><span class="s3">.</span><span class="s2">io</span><span class="s3">.</span><span class="s2">wavfile </span><span class="s1">import </span><span class="s2">read</span>
+
+<span class="s2">folder </span><span class="s3">= </span><span class="s5">&quot;Audio edited&quot;</span>
+<span class="s2">filename </span><span class="s3">= </span><span class="s5">&quot;erozija2.wav&quot;</span>
+
+<span class="s2">path </span><span class="s3">= </span><span class="s2">os</span><span class="s3">.</span><span class="s2">path</span><span class="s3">.</span><span class="s2">join</span><span class="s3">(</span><span class="s2">folder</span><span class="s3">, </span><span class="s2">filename</span><span class="s3">)</span>
+
+<span class="s2">sample_rate</span><span class="s3">, </span><span class="s2">audio_data </span><span class="s3">= </span><span class="s2">read</span><span class="s3">(</span><span class="s2">path</span><span class="s3">)</span>
+
+<span class="s2">y </span><span class="s3">= (</span><span class="s2">audio_data </span><span class="s3">/ </span><span class="s2">np</span><span class="s3">.</span><span class="s2">max</span><span class="s3">(</span><span class="s2">np</span><span class="s3">.</span><span class="s2">abs</span><span class="s3">(</span><span class="s2">audio_data</span><span class="s3">))).</span><span class="s2">astype</span><span class="s3">(</span><span class="s2">np</span><span class="s3">.</span><span class="s2">float32</span><span class="s3">)</span>
+<span class="s2">t </span><span class="s3">= </span><span class="s2">np</span><span class="s3">.</span><span class="s2">linspace</span><span class="s3">(</span><span class="s4">0</span><span class="s3">, </span><span class="s2">len</span><span class="s3">(</span><span class="s2">y</span><span class="s3">) / </span><span class="s2">sample_rate</span><span class="s3">, </span><span class="s2">len</span><span class="s3">(</span><span class="s2">y</span><span class="s3">))</span>
+
+<span class="s0"># Ustvari interaktivni graf</span>
+<span class="s2">fig </span><span class="s3">= </span><span class="s2">go</span><span class="s3">.</span><span class="s2">Figure</span><span class="s3">()</span>
+
+<span class="s2">fig</span><span class="s3">.</span><span class="s2">add_trace</span><span class="s3">(</span><span class="s2">go</span><span class="s3">.</span><span class="s2">Scatter</span><span class="s3">(</span><span class="s2">x</span><span class="s3">=</span><span class="s2">t</span><span class="s3">, </span><span class="s2">y</span><span class="s3">=</span><span class="s2">y</span><span class="s3">, </span><span class="s2">mode</span><span class="s3">=</span><span class="s5">&quot;lines&quot;</span><span class="s3">, </span><span class="s2">name</span><span class="s3">=</span><span class="s5">&quot;Signal&quot;</span><span class="s3">))</span>
+
+<span class="s2">fig</span><span class="s3">.</span><span class="s2">update_layout</span><span class="s3">(</span>
+    <span class="s2">title</span><span class="s3">=</span><span class="s5">&quot;Časovni potek signala&quot; </span><span class="s3">+ </span><span class="s5">f&quot; (</span><span class="s1">{</span><span class="s2">filename</span><span class="s1">}</span><span class="s5">)&quot;</span><span class="s3">,</span>
+    <span class="s2">xaxis_title</span><span class="s3">=</span><span class="s5">&quot;Čas [s]&quot;</span><span class="s3">,</span>
+    <span class="s2">yaxis_title</span><span class="s3">=</span><span class="s5">&quot;Amplituda&quot;</span><span class="s3">,</span>
+    <span class="s2">font</span><span class="s3">=</span><span class="s2">dict</span><span class="s3">(</span><span class="s2">size</span><span class="s3">=</span><span class="s4">16</span><span class="s3">),</span>
+    <span class="s2">xaxis</span><span class="s3">=</span><span class="s2">dict</span><span class="s3">(</span>
+        <span class="s2">tickformat</span><span class="s3">=</span><span class="s5">&quot;0.2f&quot;</span><span class="s3">,</span>
+        <span class="s2">showgrid</span><span class="s3">=</span><span class="s1">True</span><span class="s3">,</span>
+    <span class="s3">),</span>
+    <span class="s2">yaxis</span><span class="s3">=</span><span class="s2">dict</span><span class="s3">(</span><span class="s2">showgrid</span><span class="s3">=</span><span class="s1">True</span><span class="s3">),</span>
+<span class="s3">)</span>
+
+<span class="s2">fig</span><span class="s3">.</span><span class="s2">show</span><span class="s3">()</span>
+<hr class="ls0"><span class="s0">#%% md 
+</span><span class="s2">Poročilo <hr class="ls0"></span><span class="s0">#%% md 
+</span><span class="s2">&lt;img src=&quot;Slike/Picture1.png&quot;/&gt; 
+&lt;img src=&quot;Slike/Picture2.png&quot;/&gt; 
+&lt;img src=&quot;Slike/Picture3.png&quot;/&gt; 
+&lt;img src=&quot;Slike/Picture4.png&quot;/&gt; 
+&lt;img src=&quot;Slike/Picture5.png&quot;/&gt; 
+&lt;img src=&quot;Slike/Picture6.png&quot;/&gt; 
+&lt;img src=&quot;Slike/Picture7.png&quot;/&gt; 
+&lt;img src=&quot;Slike/Picture8.png&quot;/&gt; 
+&lt;img src=&quot;Slike/Picture10.png&quot;/&gt; 
+&lt;img src=&quot;Slike/Picture11.png&quot;/&gt; 
+&lt;img src=&quot;Slike/Picture12.png&quot;/&gt; 
+&lt;img src=&quot;Slike/Picture13.png&quot;/&gt; 
+&lt;img src=&quot;Slike/Picture14.png&quot;/&gt; 
+&lt;img src=&quot;Slike/Picture15.png&quot;/&gt; 
+&lt;img src=&quot;Slike/Picture16.png&quot;/&gt; 
+&lt;img src=&quot;Slike/Picture17.png&quot;/&gt; 
+Signal žvižganja predstavlja popolno sinusoido. 
+# 
+&lt;img src=&quot;Slike/Picture18.png&quot;/&gt; 
+&lt;img src=&quot;Slike/Picture19.png&quot;/&gt; 
+&lt;img src=&quot;Slike/Picture20.png&quot;/&gt; 
+SIGNAL PODOBEN SIGNALU O 
+# 
+&lt;img src=&quot;Slike/Picture21.png&quot;/&gt; 
+SIGNAL PODOBEN SIGNALU I 
+# 
+&lt;img src=&quot;Slike/Picture22.png&quot;/&gt; 
+SIGNAL PODOBEN SIGNALU A 
+# 
+ 
+Iz signala izgovorjave besede »EROZIJA« so razvidni signali samoglasnikov. 
+ <hr class="ls0"></span><span class="s0">#%% 
+</span><span class="s1">import </span><span class="s2">numpy </span><span class="s1">as </span><span class="s2">np</span>
+<span class="s1">import </span><span class="s2">os</span>
+<span class="s1">from </span><span class="s2">scipy</span><span class="s3">.</span><span class="s2">io</span><span class="s3">.</span><span class="s2">wavfile </span><span class="s1">import </span><span class="s2">read</span>
+<span class="s1">from </span><span class="s2">scipy</span><span class="s3">.</span><span class="s2">signal </span><span class="s1">import </span><span class="s2">correlate</span>
+
+<span class="s1">def </span><span class="s2">find_vowel_positions</span><span class="s3">(</span><span class="s2">word_path</span><span class="s3">, </span><span class="s2">vowels_paths</span><span class="s3">, </span><span class="s2">sample_rate</span><span class="s3">):</span>
+    <span class="s0"># Preberemo celoten signal besede &quot;erozija&quot;</span>
+    <span class="s2">_</span><span class="s3">, </span><span class="s2">word_signal </span><span class="s3">= </span><span class="s2">read</span><span class="s3">(</span><span class="s2">word_path</span><span class="s3">)</span>
+
+    <span class="s2">vowel_positions </span><span class="s3">= {}  </span><span class="s0"># Shrani rezultate križne korelacije</span>
+
+    <span class="s1">for </span><span class="s2">vowel</span><span class="s3">, </span><span class="s2">vowel_path </span><span class="s1">in </span><span class="s2">vowels_paths</span><span class="s3">.</span><span class="s2">items</span><span class="s3">():</span>
+        <span class="s0"># Preberemo obrezan samoglasnik</span>
+        <span class="s2">_</span><span class="s3">, </span><span class="s2">vowel_signal </span><span class="s3">= </span><span class="s2">read</span><span class="s3">(</span><span class="s2">vowel_path</span><span class="s3">)</span>
+
+        <span class="s0"># Izvedemo križno korelacijo</span>
+        <span class="s2">correlation </span><span class="s3">= </span><span class="s2">correlate</span><span class="s3">(</span><span class="s2">word_signal</span><span class="s3">, </span><span class="s2">vowel_signal</span><span class="s3">, </span><span class="s2">mode</span><span class="s3">=</span><span class="s5">&quot;valid&quot;</span><span class="s3">)</span>
+        <span class="s2">lag </span><span class="s3">= </span><span class="s2">np</span><span class="s3">.</span><span class="s2">argmax</span><span class="s3">(</span><span class="s2">correlation</span><span class="s3">)  </span><span class="s0"># Poiščemo maksimum korelacije</span>
+
+        <span class="s0"># Izračunamo čas nastopa samoglasnika (lag pretvorimo v sekunde)</span>
+        <span class="s2">time_position </span><span class="s3">= </span><span class="s2">lag </span><span class="s3">/ </span><span class="s2">sample_rate</span>
+        <span class="s2">vowel_positions</span><span class="s3">[</span><span class="s2">vowel</span><span class="s3">] = </span><span class="s2">time_position</span>
+
+        <span class="s2">print</span><span class="s3">(</span><span class="s5">f&quot;Samoglasnik '</span><span class="s1">{</span><span class="s2">vowel</span><span class="s1">}</span><span class="s5">' se pojavi pri </span><span class="s1">{</span><span class="s2">time_position</span><span class="s1">:</span><span class="s5">.3f</span><span class="s1">} </span><span class="s5">s&quot;</span><span class="s3">)</span>
+
+    <span class="s1">return </span><span class="s2">vowel_positions</span>
+
+<span class="s0"># Definiramo poti do WAV datotek</span>
+<span class="s2">folder </span><span class="s3">= </span><span class="s5">&quot;Audio edited&quot;</span>
+<span class="s2">word_file </span><span class="s3">= </span><span class="s2">os</span><span class="s3">.</span><span class="s2">path</span><span class="s3">.</span><span class="s2">join</span><span class="s3">(</span><span class="s2">folder</span><span class="s3">, </span><span class="s5">&quot;erozija2.wav&quot;</span><span class="s3">)  </span><span class="s0"># Beseda &quot;erozija&quot;</span>
+
+<span class="s2">folder </span><span class="s3">= </span><span class="s2">os</span><span class="s3">.</span><span class="s2">path</span><span class="s3">.</span><span class="s2">join</span><span class="s3">(</span><span class="s2">folder</span><span class="s3">, </span><span class="s5">&quot;Cut&quot;</span><span class="s3">)</span>
+<span class="s2">vowel_files </span><span class="s3">= {</span>
+    <span class="s5">'a'</span><span class="s3">: </span><span class="s2">os</span><span class="s3">.</span><span class="s2">path</span><span class="s3">.</span><span class="s2">join</span><span class="s3">(</span><span class="s2">folder</span><span class="s3">, </span><span class="s5">&quot;A_cut2.wav&quot;</span><span class="s3">),</span>
+    <span class="s5">'i'</span><span class="s3">: </span><span class="s2">os</span><span class="s3">.</span><span class="s2">path</span><span class="s3">.</span><span class="s2">join</span><span class="s3">(</span><span class="s2">folder</span><span class="s3">, </span><span class="s5">&quot;I_cut.wav&quot;</span><span class="s3">),</span>
+    <span class="s5">'o'</span><span class="s3">: </span><span class="s2">os</span><span class="s3">.</span><span class="s2">path</span><span class="s3">.</span><span class="s2">join</span><span class="s3">(</span><span class="s2">folder</span><span class="s3">, </span><span class="s5">&quot;O_cut2.wav&quot;</span><span class="s3">)</span>
+<span class="s3">}</span>
+
+<span class="s0"># Pokličemo funkcijo in določimo frekvenco (nastavi ustrezno frekvenco svojega posnetka)</span>
+<span class="s2">sample_rate </span><span class="s3">= </span><span class="s4">44100  </span><span class="s0"># Običajna vzorčna frekvenca v Hz</span>
+<span class="s2">vowel_positions </span><span class="s3">= </span><span class="s2">find_vowel_positions</span><span class="s3">(</span><span class="s2">word_file</span><span class="s3">, </span><span class="s2">vowel_files</span><span class="s3">, </span><span class="s2">sample_rate</span><span class="s3">)</span><hr class="ls0"><span class="s0">#%% md 
+</span><span class="s2">![](Slike/Picture23.png) 
+S pomočjo križne korelacije sem uspel poiskati prvi pojav posameznega samoglasnika, kar omogoča, da ugotovim katere druge črke se nahajajo v signalu na katerih mestih.</span></pre>
+</body>
+</html>
