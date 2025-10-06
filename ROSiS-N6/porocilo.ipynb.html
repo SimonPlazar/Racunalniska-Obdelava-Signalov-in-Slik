@@ -1,0 +1,227 @@
+<html>
+<head>
+<title>porocilo.ipynb</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #bcbec4;}
+.s1 { color: #cf8e6d;}
+.s2 { color: #bcbec4;}
+.s3 { color: #2aacb8;}
+.s4 { color: #6aab73;}
+.s5 { color: #7a7e85;}
+.ls0 { height: 1px; border-width: 0; color: #43454a; background-color:#43454a}
+</style>
+</head>
+<body bgcolor="#1e1f22">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+porocilo.ipynb</font>
+</center></td></tr></table>
+<pre><span class="s0">#%% md 
+# Filtri <hr class="ls0">#%% 
+</span><span class="s1">import </span><span class="s0">numpy </span><span class="s1">as </span><span class="s0">np</span>
+<span class="s1">import </span><span class="s0">matplotlib</span><span class="s2">.</span><span class="s0">pyplot </span><span class="s1">as </span><span class="s0">plt</span>
+<span class="s1">from </span><span class="s0">scipy</span><span class="s2">.</span><span class="s0">io</span><span class="s2">.</span><span class="s0">wavfile </span><span class="s1">import </span><span class="s0">read</span>
+<span class="s1">from </span><span class="s0">scipy</span><span class="s2">.</span><span class="s0">signal </span><span class="s1">import </span><span class="s0">find_peaks</span>
+<span class="s1">from </span><span class="s0">scipy</span><span class="s2">.</span><span class="s0">signal </span><span class="s1">import </span><span class="s0">filtfilt</span><span class="s2">, </span><span class="s0">freqz</span><span class="s2">, </span><span class="s0">tf2zpk</span>
+<span class="s1">from </span><span class="s0">scipy</span><span class="s2">.</span><span class="s0">signal </span><span class="s1">import </span><span class="s0">butter</span><span class="s2">, </span><span class="s0">sosfiltfilt</span><span class="s2">, </span><span class="s0">sosfreqz</span><span class="s2">, </span><span class="s0">sos2zpk</span>
+<span class="s1">import </span><span class="s0">yulewalker </span><span class="s1">as </span><span class="s0">yw</span><hr class="ls0"><span class="s0">#%% 
+</span><span class="s1">def </span><span class="s0">plot_dft</span><span class="s2">(</span><span class="s0">freqs</span><span class="s2">, </span><span class="s0">amplitudes</span><span class="s2">, </span><span class="s0">title</span><span class="s2">):</span>
+    <span class="s0">plt</span><span class="s2">.</span><span class="s0">figure</span><span class="s2">(</span><span class="s0">figsize</span><span class="s2">=(</span><span class="s3">10</span><span class="s2">, </span><span class="s3">6</span><span class="s2">))</span>
+    <span class="s0">plt</span><span class="s2">.</span><span class="s0">plot</span><span class="s2">(</span><span class="s0">freqs</span><span class="s2">, </span><span class="s0">amplitudes</span><span class="s2">)</span>
+    <span class="s0">plt</span><span class="s2">.</span><span class="s0">title</span><span class="s2">(</span><span class="s4">f'FFT of </span><span class="s1">{</span><span class="s0">title</span><span class="s1">}</span><span class="s4">'</span><span class="s2">)</span>
+    <span class="s0">plt</span><span class="s2">.</span><span class="s0">xlabel</span><span class="s2">(</span><span class="s4">'Frequency (Hz)'</span><span class="s2">)</span>
+    <span class="s0">plt</span><span class="s2">.</span><span class="s0">ylabel</span><span class="s2">(</span><span class="s4">'Amplitude'</span><span class="s2">)</span>
+    <span class="s0">plt</span><span class="s2">.</span><span class="s0">grid</span><span class="s2">()</span>
+    <span class="s0">plt</span><span class="s2">.</span><span class="s0">xlim</span><span class="s2">(</span><span class="s3">0</span><span class="s2">, </span><span class="s3">5000</span><span class="s2">)</span>
+    <span class="s0">plt</span><span class="s2">.</span><span class="s0">show</span><span class="s2">()</span><hr class="ls0"><span class="s0">#%% 
+</span><span class="s1">def </span><span class="s0">find_fundamental</span><span class="s2">(</span><span class="s0">freqs</span><span class="s2">, </span><span class="s0">amplitudes</span><span class="s2">):</span>
+    <span class="s0">max_index </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">argmax</span><span class="s2">(</span><span class="s0">amplitudes</span><span class="s2">)</span>
+    <span class="s1">return </span><span class="s0">freqs</span><span class="s2">[</span><span class="s0">max_index</span><span class="s2">]</span><hr class="ls0"><span class="s0">#%% 
+</span><span class="s1">def </span><span class="s0">comb_filter</span><span class="s2">(</span><span class="s0">sample_rate</span><span class="s2">, </span><span class="s0">f0</span><span class="s2">, </span><span class="s0">harmonics</span><span class="s2">, </span><span class="s0">order</span><span class="s2">=</span><span class="s3">25</span><span class="s2">, </span><span class="s0">width</span><span class="s2">=</span><span class="s3">50</span><span class="s2">, </span><span class="s0">min_freq</span><span class="s2">=</span><span class="s3">500</span><span class="s2">, </span><span class="s0">delta</span><span class="s2">=</span><span class="s3">5</span><span class="s2">):</span>
+    <span class="s0">np</span><span class="s2">.</span><span class="s0">int </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">int64</span>
+    <span class="s0">nyq </span><span class="s2">= </span><span class="s0">sample_rate </span><span class="s2">// </span><span class="s3">2</span>
+
+    <span class="s0">intervals </span><span class="s2">= []</span>
+    <span class="s1">for </span><span class="s0">h </span><span class="s1">in </span><span class="s0">harmonics</span><span class="s2">:</span>
+        <span class="s0">fh </span><span class="s2">= </span><span class="s0">h </span><span class="s2">* </span><span class="s0">f0</span>
+        <span class="s5"># if fh &lt; fmin:</span>
+        <span class="s5">#     continue</span>
+
+        <span class="s0">f1 </span><span class="s2">= </span><span class="s0">max</span><span class="s2">(</span><span class="s3">0</span><span class="s2">, </span><span class="s0">fh </span><span class="s2">- </span><span class="s0">width</span><span class="s2">)</span>
+        <span class="s0">f2 </span><span class="s2">= </span><span class="s0">min</span><span class="s2">(</span><span class="s0">nyq</span><span class="s2">, </span><span class="s0">fh </span><span class="s2">+ </span><span class="s0">width</span><span class="s2">)</span>
+        <span class="s0">intervals</span><span class="s2">.</span><span class="s0">append</span><span class="s2">((</span><span class="s0">f1</span><span class="s2">, </span><span class="s0">f2</span><span class="s2">))</span>
+
+    <span class="s5"># zdruzi prekrivajoče intervale</span>
+    <span class="s0">intervals</span><span class="s2">.</span><span class="s0">sort</span><span class="s2">()</span>
+    <span class="s0">merged </span><span class="s2">= []</span>
+    <span class="s0">cur_start</span><span class="s2">, </span><span class="s0">cur_end </span><span class="s2">= </span><span class="s0">intervals</span><span class="s2">[</span><span class="s3">0</span><span class="s2">]</span>
+
+    <span class="s1">for </span><span class="s0">f1</span><span class="s2">, </span><span class="s0">f2 </span><span class="s1">in </span><span class="s0">intervals</span><span class="s2">[</span><span class="s3">1</span><span class="s2">:]:</span>
+        <span class="s1">if </span><span class="s0">f1 </span><span class="s2">&lt;= </span><span class="s0">cur_end </span><span class="s2">+ </span><span class="s3">2 </span><span class="s2">* </span><span class="s0">delta</span><span class="s2">:</span>
+            <span class="s0">cur_end </span><span class="s2">= </span><span class="s0">max</span><span class="s2">(</span><span class="s0">cur_end</span><span class="s2">, </span><span class="s0">f2</span><span class="s2">)</span>
+        <span class="s1">else</span><span class="s2">:</span>
+            <span class="s0">merged</span><span class="s2">.</span><span class="s0">append</span><span class="s2">((</span><span class="s0">cur_start</span><span class="s2">, </span><span class="s0">cur_end</span><span class="s2">))</span>
+            <span class="s0">cur_start</span><span class="s2">, </span><span class="s0">cur_end </span><span class="s2">= </span><span class="s0">f1</span><span class="s2">, </span><span class="s0">f2</span>
+    <span class="s0">merged</span><span class="s2">.</span><span class="s0">append</span><span class="s2">((</span><span class="s0">cur_start</span><span class="s2">, </span><span class="s0">cur_end</span><span class="s2">))</span>
+
+    <span class="s0">fc </span><span class="s2">= [</span><span class="s3">0.0</span><span class="s2">]</span>
+    <span class="s0">am </span><span class="s2">= [</span><span class="s3">1.0</span><span class="s2">]</span>
+    <span class="s1">for </span><span class="s0">f1</span><span class="s2">, </span><span class="s0">f2 </span><span class="s1">in </span><span class="s0">merged</span><span class="s2">:</span>
+        <span class="s0">left </span><span class="s2">= </span><span class="s0">max</span><span class="s2">(</span><span class="s3">0</span><span class="s2">, </span><span class="s0">f1 </span><span class="s2">- </span><span class="s0">delta</span><span class="s2">)</span>
+        <span class="s0">right </span><span class="s2">= </span><span class="s0">min</span><span class="s2">(</span><span class="s0">nyq</span><span class="s2">, </span><span class="s0">f2 </span><span class="s2">+ </span><span class="s0">delta</span><span class="s2">)</span>
+
+        <span class="s0">fc</span><span class="s2">.</span><span class="s0">extend</span><span class="s2">([</span><span class="s0">left</span><span class="s2">, </span><span class="s0">f1</span><span class="s2">, </span><span class="s0">f2</span><span class="s2">, </span><span class="s0">right</span><span class="s2">])</span>
+        <span class="s0">am</span><span class="s2">.</span><span class="s0">extend</span><span class="s2">([</span><span class="s3">1.0</span><span class="s2">, </span><span class="s3">0.0</span><span class="s2">, </span><span class="s3">0.0</span><span class="s2">, </span><span class="s3">1.0</span><span class="s2">])</span>
+
+    <span class="s0">fc</span><span class="s2">.</span><span class="s0">append</span><span class="s2">(</span><span class="s0">nyq</span><span class="s2">)</span>
+    <span class="s0">am</span><span class="s2">.</span><span class="s0">append</span><span class="s2">(</span><span class="s3">1.0</span><span class="s2">)</span>
+
+    <span class="s0">fc </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">array</span><span class="s2">(</span><span class="s0">fc</span><span class="s2">)</span>
+    <span class="s0">am </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">array</span><span class="s2">(</span><span class="s0">am</span><span class="s2">)</span>
+
+    <span class="s5"># print(&quot;Intervali notch filtrov:&quot;, merged)</span>
+    <span class="s5"># print(&quot;Frekvence notch območij:&quot;, fc)</span>
+    <span class="s5"># print(&quot;Amplituda notch območij:&quot;, am)</span>
+
+    <span class="s0">normalized_freqs </span><span class="s2">= </span><span class="s0">fc </span><span class="s2">/ </span><span class="s0">sample_rate </span><span class="s2">* </span><span class="s3">2</span>
+
+    <span class="s0">a</span><span class="s2">, </span><span class="s0">b </span><span class="s2">= </span><span class="s0">yw</span><span class="s2">.</span><span class="s0">yulewalk</span><span class="s2">(</span><span class="s0">order</span><span class="s2">, </span><span class="s0">normalized_freqs</span><span class="s2">, </span><span class="s0">am</span><span class="s2">)</span>
+
+    <span class="s0">z</span><span class="s2">, </span><span class="s0">p</span><span class="s2">, </span><span class="s0">k </span><span class="s2">= </span><span class="s0">tf2zpk</span><span class="s2">(</span><span class="s0">b</span><span class="s2">, </span><span class="s0">a</span><span class="s2">)</span>
+    <span class="s5"># če so poli znotraj knožnice je stabilen</span>
+    <span class="s1">if </span><span class="s0">np</span><span class="s2">.</span><span class="s0">any</span><span class="s2">(</span><span class="s0">np</span><span class="s2">.</span><span class="s0">abs</span><span class="s2">(</span><span class="s0">p</span><span class="s2">) &gt; </span><span class="s3">1</span><span class="s2">):</span>
+        <span class="s0">print</span><span class="s2">(</span><span class="s4">&quot;Filter ni stabilen&quot;</span><span class="s2">)</span>
+
+    <span class="s1">return </span><span class="s0">b</span><span class="s2">, </span><span class="s0">a</span>
+<hr class="ls0"><span class="s0">#%% 
+</span><span class="s1">def </span><span class="s0">cascade_filter</span><span class="s2">(</span><span class="s0">sample_rate</span><span class="s2">, </span><span class="s0">f0</span><span class="s2">, </span><span class="s0">harmonics</span><span class="s2">, </span><span class="s0">order</span><span class="s2">=</span><span class="s3">4</span><span class="s2">, </span><span class="s0">width</span><span class="s2">=</span><span class="s3">10</span><span class="s2">, </span><span class="s0">fmin</span><span class="s2">=</span><span class="s3">500</span><span class="s2">):</span>
+    <span class="s0">nyq </span><span class="s2">= </span><span class="s0">sample_rate </span><span class="s2">// </span><span class="s3">2</span>
+    <span class="s0">sos_sections </span><span class="s2">= []</span>
+
+    <span class="s1">for </span><span class="s0">h </span><span class="s1">in </span><span class="s0">harmonics</span><span class="s2">:</span>
+        <span class="s0">fh </span><span class="s2">= </span><span class="s0">h </span><span class="s2">* </span><span class="s0">f0</span>
+        <span class="s5"># if fh &lt; fmin or fh + width &gt;= nyq:</span>
+        <span class="s5">#     continue</span>
+
+        <span class="s5"># + normalizacija</span>
+        <span class="s0">low </span><span class="s2">= </span><span class="s0">max</span><span class="s2">(</span><span class="s3">0</span><span class="s2">, </span><span class="s0">fh </span><span class="s2">- </span><span class="s0">width</span><span class="s2">) / </span><span class="s0">nyq</span>
+        <span class="s0">high </span><span class="s2">= </span><span class="s0">min</span><span class="s2">(</span><span class="s0">nyq</span><span class="s2">, </span><span class="s0">fh </span><span class="s2">+ </span><span class="s0">width</span><span class="s2">) / </span><span class="s0">nyq</span>
+
+        <span class="s0">sos </span><span class="s2">= </span><span class="s0">butter</span><span class="s2">(</span><span class="s0">order</span><span class="s2">, [</span><span class="s0">low</span><span class="s2">, </span><span class="s0">high</span><span class="s2">], </span><span class="s0">btype</span><span class="s2">=</span><span class="s4">&quot;bandstop&quot;</span><span class="s2">, </span><span class="s0">output</span><span class="s2">=</span><span class="s4">&quot;sos&quot;</span><span class="s2">)</span>
+
+        <span class="s0">sos_sections</span><span class="s2">.</span><span class="s0">append</span><span class="s2">(</span><span class="s0">sos</span><span class="s2">)</span>
+
+    <span class="s5"># Združi vse SOS v enega</span>
+    <span class="s0">sos_total </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">vstack</span><span class="s2">(</span><span class="s0">sos_sections</span><span class="s2">)</span>
+
+    <span class="s0">z</span><span class="s2">, </span><span class="s0">p</span><span class="s2">, </span><span class="s0">k </span><span class="s2">= </span><span class="s0">sos2zpk</span><span class="s2">(</span><span class="s0">sos_total</span><span class="s2">)</span>
+    <span class="s1">if </span><span class="s0">np</span><span class="s2">.</span><span class="s0">any</span><span class="s2">(</span><span class="s0">np</span><span class="s2">.</span><span class="s0">abs</span><span class="s2">(</span><span class="s0">p</span><span class="s2">) &gt; </span><span class="s3">1</span><span class="s2">):</span>
+        <span class="s0">print</span><span class="s2">(</span><span class="s4">&quot;Filter ni stabilen&quot;</span><span class="s2">)</span>
+
+    <span class="s1">return </span><span class="s0">sos_total</span><hr class="ls0"><span class="s0">#%% 
+</span><span class="s1">def </span><span class="s0">plot_filter_response</span><span class="s2">(</span><span class="s0">filter_data</span><span class="s2">, </span><span class="s0">sample_rate</span><span class="s2">, </span><span class="s0">title</span><span class="s2">, </span><span class="s0">type</span><span class="s2">=</span><span class="s4">&quot;comb&quot;</span><span class="s2">):</span>
+    <span class="s1">if </span><span class="s0">type </span><span class="s2">== </span><span class="s4">&quot;comb&quot;</span><span class="s2">:</span>
+        <span class="s0">b</span><span class="s2">, </span><span class="s0">a </span><span class="s2">= </span><span class="s0">filter_data</span>
+        <span class="s0">w</span><span class="s2">, </span><span class="s0">h </span><span class="s2">= </span><span class="s0">freqz</span><span class="s2">(</span><span class="s0">b</span><span class="s2">, </span><span class="s0">a</span><span class="s2">, </span><span class="s0">worN</span><span class="s2">=</span><span class="s3">2048</span><span class="s2">, </span><span class="s0">fs</span><span class="s2">=</span><span class="s0">sample_rate</span><span class="s2">)</span>
+    <span class="s1">elif </span><span class="s0">type </span><span class="s2">== </span><span class="s4">&quot;cascade&quot;</span><span class="s2">:</span>
+        <span class="s0">w</span><span class="s2">, </span><span class="s0">h </span><span class="s2">= </span><span class="s0">sosfreqz</span><span class="s2">(</span><span class="s0">filter_data</span><span class="s2">, </span><span class="s0">worN</span><span class="s2">=</span><span class="s3">2048</span><span class="s2">, </span><span class="s0">fs</span><span class="s2">=</span><span class="s0">sample_rate</span><span class="s2">)</span>
+
+    <span class="s0">plt</span><span class="s2">.</span><span class="s0">figure</span><span class="s2">(</span><span class="s0">figsize</span><span class="s2">=(</span><span class="s3">10</span><span class="s2">, </span><span class="s3">4</span><span class="s2">))</span>
+    <span class="s0">plt</span><span class="s2">.</span><span class="s0">plot</span><span class="s2">(</span><span class="s0">w</span><span class="s2">, </span><span class="s3">20 </span><span class="s2">* </span><span class="s0">np</span><span class="s2">.</span><span class="s0">log10</span><span class="s2">(</span><span class="s0">np</span><span class="s2">.</span><span class="s0">abs</span><span class="s2">(</span><span class="s0">h</span><span class="s2">) + </span><span class="s3">1e-10</span><span class="s2">))</span>
+    <span class="s0">plt</span><span class="s2">.</span><span class="s0">title</span><span class="s2">(</span><span class="s0">title</span><span class="s2">)</span>
+    <span class="s0">plt</span><span class="s2">.</span><span class="s0">xlim</span><span class="s2">(</span><span class="s3">0</span><span class="s2">, </span><span class="s3">2000</span><span class="s2">)</span>
+    <span class="s0">plt</span><span class="s2">.</span><span class="s0">xlabel</span><span class="s2">(</span><span class="s4">&quot;Frekvenca&quot;</span><span class="s2">)</span>
+    <span class="s0">plt</span><span class="s2">.</span><span class="s0">ylabel</span><span class="s2">(</span><span class="s4">&quot;Amplituda&quot;</span><span class="s2">)</span>
+    <span class="s0">plt</span><span class="s2">.</span><span class="s0">grid</span><span class="s2">()</span>
+    <span class="s0">plt</span><span class="s2">.</span><span class="s0">tight_layout</span><span class="s2">()</span>
+    <span class="s0">plt</span><span class="s2">.</span><span class="s0">show</span><span class="s2">()</span>
+<span class="s5">#</span>
+<span class="s5"># def plot_filter_response(filter_data, sample_rate, title, type=&quot;comb&quot;):</span>
+<span class="s5">#     plt.figure(figsize=(10, 5))</span>
+<span class="s5">#     plt.xlim(0, 2000)</span>
+<span class="s5">#</span>
+<span class="s5">#     if type == &quot;comb&quot;:</span>
+<span class="s5">#         b, a = filter_data</span>
+<span class="s5">#         w, h = freqz(b, a, worN=2048, fs=sample_rate)</span>
+<span class="s5">#</span>
+<span class="s5">#         # --- Amplitudni odziv ---</span>
+<span class="s5">#         plt.subplot(2, 1, 1)</span>
+<span class="s5">#         plt.plot(w, 20 * np.log10(np.abs(h) + 1e-10), 'b')</span>
+<span class="s5">#         plt.title(title + &quot; - Amplitudni odziv&quot;)</span>
+<span class="s5">#         plt.xlabel(&quot;Frekvenca [Hz]&quot;)</span>
+<span class="s5">#         plt.ylabel(&quot;Amplituda [dB]&quot;)</span>
+<span class="s5">#         plt.grid(True)</span>
+<span class="s5">#</span>
+<span class="s5">#         # --- Fazni odziv ---</span>
+<span class="s5">#         plt.subplot(2, 1, 2)</span>
+<span class="s5">#         plt.plot(w, np.angle(h), 'r')</span>
+<span class="s5">#         plt.title(title + &quot; - Fazni odziv&quot;)</span>
+<span class="s5">#         plt.xlabel(&quot;Frekvenca [Hz]&quot;)</span>
+<span class="s5">#         plt.ylabel(&quot;Faza [rad]&quot;)</span>
+<span class="s5">#         plt.grid(True)</span>
+<span class="s5">#         plt.tight_layout()</span>
+<span class="s5">#         plt.show()</span>
+<span class="s5">#</span>
+<span class="s5">#     elif type == &quot;cascade&quot;:</span>
+<span class="s5">#         # samo amplituda za SOS</span>
+<span class="s5">#         w, h = sosfreqz(filter_data, worN=2048, fs=sample_rate)</span>
+<span class="s5">#         plt.plot(w, 20 * np.log10(np.abs(h) + 1e-10), 'b')</span>
+<span class="s5">#         plt.title(title + &quot; - Amplitudni odziv (cascade)&quot;)</span>
+<span class="s5">#         plt.xlabel(&quot;Frekvenca [Hz]&quot;)</span>
+<span class="s5">#         plt.ylabel(&quot;Amplituda [dB]&quot;)</span>
+<span class="s5">#         plt.grid(True)</span>
+<span class="s5">#         plt.tight_layout()</span>
+<span class="s5">#         plt.show()</span>
+
+<hr class="ls0"><span class="s0">#%% 
+</span><span class="s1">import </span><span class="s0">os</span>
+
+
+<span class="s1">def </span><span class="s0">procesiraj_signale</span><span class="s2">():</span>
+    <span class="s0">harmonics </span><span class="s2">= [</span><span class="s3">2</span><span class="s2">, </span><span class="s3">3</span><span class="s2">, </span><span class="s3">4</span><span class="s2">, </span><span class="s3">5</span><span class="s2">, </span><span class="s3">6</span><span class="s2">, </span><span class="s3">7</span><span class="s2">, </span><span class="s3">8</span><span class="s2">, </span><span class="s3">9</span><span class="s2">, </span><span class="s3">10</span><span class="s2">]</span>
+    <span class="s0">folder </span><span class="s2">= </span><span class="s4">'Audio'</span>
+    <span class="s0">files </span><span class="s2">= [</span><span class="s0">f </span><span class="s1">for </span><span class="s0">f </span><span class="s1">in </span><span class="s0">os</span><span class="s2">.</span><span class="s0">listdir</span><span class="s2">(</span><span class="s0">folder</span><span class="s2">) </span><span class="s1">if </span><span class="s0">f</span><span class="s2">.</span><span class="s0">lower</span><span class="s2">().</span><span class="s0">endswith</span><span class="s2">(</span><span class="s4">'.wav'</span><span class="s2">)]</span>
+
+    <span class="s1">for </span><span class="s0">filename </span><span class="s1">in </span><span class="s0">files</span><span class="s2">[:]:</span>
+        <span class="s0">filepath </span><span class="s2">= </span><span class="s0">os</span><span class="s2">.</span><span class="s0">path</span><span class="s2">.</span><span class="s0">join</span><span class="s2">(</span><span class="s0">folder</span><span class="s2">, </span><span class="s0">filename</span><span class="s2">)</span>
+        <span class="s0">sample_rate</span><span class="s2">, </span><span class="s0">signal </span><span class="s2">= </span><span class="s0">read</span><span class="s2">(</span><span class="s0">filepath</span><span class="s2">)</span>
+        <span class="s0">y </span><span class="s2">= (</span><span class="s0">signal </span><span class="s2">/ </span><span class="s0">np</span><span class="s2">.</span><span class="s0">max</span><span class="s2">(</span><span class="s0">np</span><span class="s2">.</span><span class="s0">abs</span><span class="s2">(</span><span class="s0">signal</span><span class="s2">))).</span><span class="s0">astype</span><span class="s2">(</span><span class="s0">np</span><span class="s2">.</span><span class="s0">float32</span><span class="s2">)</span>
+
+        <span class="s0">N </span><span class="s2">= </span><span class="s0">len</span><span class="s2">(</span><span class="s0">signal</span><span class="s2">)</span>
+        <span class="s0">freqs </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">fft</span><span class="s2">.</span><span class="s0">rfftfreq</span><span class="s2">(</span><span class="s0">N</span><span class="s2">, </span><span class="s0">d</span><span class="s2">=</span><span class="s3">1 </span><span class="s2">/ </span><span class="s0">sample_rate</span><span class="s2">)</span>
+        <span class="s0">amplitudes </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">abs</span><span class="s2">(</span><span class="s0">np</span><span class="s2">.</span><span class="s0">fft</span><span class="s2">.</span><span class="s0">rfft</span><span class="s2">(</span><span class="s0">y</span><span class="s2">))</span>
+
+        <span class="s0">f0 </span><span class="s2">= </span><span class="s0">find_fundamental</span><span class="s2">(</span><span class="s0">freqs</span><span class="s2">, </span><span class="s0">amplitudes</span><span class="s2">)</span>
+        <span class="s0">print</span><span class="s2">(</span><span class="s4">f&quot;Najdena bazna frekvenca: </span><span class="s1">{</span><span class="s0">f0</span><span class="s1">} </span><span class="s4">Hz&quot;</span><span class="s2">)</span>
+
+        <span class="s0">plot_dft</span><span class="s2">(</span><span class="s0">freqs</span><span class="s2">, </span><span class="s0">amplitudes</span><span class="s2">, </span><span class="s4">f&quot;</span><span class="s1">{</span><span class="s0">filename</span><span class="s1">} </span><span class="s4">- Original FFT&quot;</span><span class="s2">)</span>
+
+        <span class="s5"># COMB FILTER</span>
+        <span class="s0">b</span><span class="s2">, </span><span class="s0">a </span><span class="s2">= </span><span class="s0">comb_filter</span><span class="s2">(</span><span class="s0">sample_rate</span><span class="s2">, </span><span class="s0">f0</span><span class="s2">, </span><span class="s0">harmonics</span><span class="s2">, </span><span class="s0">order</span><span class="s2">=</span><span class="s3">40</span><span class="s2">, </span><span class="s0">width</span><span class="s2">=</span><span class="s3">50</span><span class="s2">, </span><span class="s0">min_freq</span><span class="s2">=</span><span class="s3">500</span><span class="s2">)</span>
+        <span class="s0">y_filt </span><span class="s2">= </span><span class="s0">filtfilt</span><span class="s2">(</span><span class="s0">b</span><span class="s2">, </span><span class="s0">a</span><span class="s2">, </span><span class="s0">y</span><span class="s2">.</span><span class="s0">copy</span><span class="s2">())</span>
+
+        <span class="s0">freqs_filt </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">fft</span><span class="s2">.</span><span class="s0">rfftfreq</span><span class="s2">(</span><span class="s0">len</span><span class="s2">(</span><span class="s0">y_filt</span><span class="s2">), </span><span class="s0">d</span><span class="s2">=</span><span class="s3">1 </span><span class="s2">/ </span><span class="s0">sample_rate</span><span class="s2">)</span>
+        <span class="s0">amplitudes_filt </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">abs</span><span class="s2">(</span><span class="s0">np</span><span class="s2">.</span><span class="s0">fft</span><span class="s2">.</span><span class="s0">rfft</span><span class="s2">(</span><span class="s0">y_filt</span><span class="s2">))</span>
+        <span class="s0">plot_dft</span><span class="s2">(</span><span class="s0">freqs_filt</span><span class="s2">, </span><span class="s0">amplitudes_filt</span><span class="s2">, </span><span class="s4">f&quot;</span><span class="s1">{</span><span class="s0">filename</span><span class="s1">} </span><span class="s4">- Comb Filtered FFT&quot;</span><span class="s2">)</span>
+
+        <span class="s0">plot_filter_response</span><span class="s2">((</span><span class="s0">b</span><span class="s2">, </span><span class="s0">a</span><span class="s2">), </span><span class="s0">sample_rate</span><span class="s2">, </span><span class="s4">f&quot;</span><span class="s1">{</span><span class="s0">filename</span><span class="s1">} </span><span class="s4">- Comb Filter Response&quot;</span><span class="s2">, </span><span class="s0">type</span><span class="s2">=</span><span class="s4">&quot;comb&quot;</span><span class="s2">)</span>
+
+        <span class="s5"># CASCADING FILTER</span>
+        <span class="s0">sos </span><span class="s2">= </span><span class="s0">cascade_filter</span><span class="s2">(</span><span class="s0">sample_rate</span><span class="s2">, </span><span class="s0">f0</span><span class="s2">, </span><span class="s0">harmonics</span><span class="s2">, </span><span class="s0">order</span><span class="s2">=</span><span class="s3">7</span><span class="s2">, </span><span class="s0">width</span><span class="s2">=</span><span class="s3">10</span><span class="s2">)</span>
+        <span class="s0">y_sos_filt </span><span class="s2">= </span><span class="s0">sosfiltfilt</span><span class="s2">(</span><span class="s0">sos</span><span class="s2">, </span><span class="s0">y</span><span class="s2">.</span><span class="s0">copy</span><span class="s2">())</span>
+        <span class="s0">freqs_sos_filt </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">fft</span><span class="s2">.</span><span class="s0">rfftfreq</span><span class="s2">(</span><span class="s0">len</span><span class="s2">(</span><span class="s0">y_sos_filt</span><span class="s2">), </span><span class="s0">d</span><span class="s2">=</span><span class="s3">1 </span><span class="s2">/ </span><span class="s0">sample_rate</span><span class="s2">)</span>
+        <span class="s0">amplitudes_sos_filt </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">abs</span><span class="s2">(</span><span class="s0">np</span><span class="s2">.</span><span class="s0">fft</span><span class="s2">.</span><span class="s0">rfft</span><span class="s2">(</span><span class="s0">y_sos_filt</span><span class="s2">))</span>
+        <span class="s0">plot_dft</span><span class="s2">(</span><span class="s0">freqs_sos_filt</span><span class="s2">, </span><span class="s0">amplitudes_sos_filt</span><span class="s2">, </span><span class="s4">f&quot;</span><span class="s1">{</span><span class="s0">filename</span><span class="s1">} </span><span class="s4">- SOS Filtered FFT&quot;</span><span class="s2">)</span>
+
+        <span class="s0">plot_filter_response</span><span class="s2">(</span><span class="s0">sos</span><span class="s2">, </span><span class="s0">sample_rate</span><span class="s2">, </span><span class="s4">f&quot;</span><span class="s1">{</span><span class="s0">filename</span><span class="s1">} </span><span class="s4">- SOS Filter Response&quot;</span><span class="s2">, </span><span class="s0">type</span><span class="s2">=</span><span class="s4">&quot;cascade&quot;</span><span class="s2">)</span>
+
+        <span class="s0">print</span><span class="s2">(</span><span class="s4">&quot;---&quot; </span><span class="s2">* </span><span class="s3">30</span><span class="s2">)</span>
+
+
+
+
+<span class="s0">procesiraj_signale</span><span class="s2">()</span></pre>
+</body>
+</html>

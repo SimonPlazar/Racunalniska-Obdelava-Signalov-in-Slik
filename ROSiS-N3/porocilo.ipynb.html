@@ -1,0 +1,117 @@
+<html>
+<head>
+<title>porocilo.ipynb</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #bcbec4;}
+.s1 { color: #cf8e6d;}
+.s2 { color: #bcbec4;}
+.s3 { color: #2aacb8;}
+.s4 { color: #7a7e85;}
+.s5 { color: #6aab73;}
+.ls0 { height: 1px; border-width: 0; color: #43454a; background-color:#43454a}
+</style>
+</head>
+<body bgcolor="#1e1f22">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+porocilo.ipynb</font>
+</center></td></tr></table>
+<pre><span class="s0">#%% md 
+# DFT in Analize signalov <hr class="ls0">#%% 
+</span><span class="s1">from </span><span class="s0">scipy</span><span class="s2">.</span><span class="s0">io</span><span class="s2">.</span><span class="s0">wavfile </span><span class="s1">import </span><span class="s0">read</span>
+<span class="s1">import </span><span class="s0">numpy </span><span class="s1">as </span><span class="s0">np</span>
+<span class="s1">import </span><span class="s0">matplotlib</span><span class="s2">.</span><span class="s0">pyplot </span><span class="s1">as </span><span class="s0">plt</span><hr class="ls0"><span class="s0">#%% 
+</span><span class="s1">def </span><span class="s0">compute_dft_complex</span><span class="s2">(</span><span class="s0">signal</span><span class="s2">, </span><span class="s0">sample_rate</span><span class="s2">, </span><span class="s0">N</span><span class="s2">, </span><span class="s0">freq_resolution</span><span class="s2">=</span><span class="s3">0.5</span><span class="s2">, </span><span class="s0">threshold</span><span class="s2">=</span><span class="s3">0.002</span><span class="s2">, </span><span class="s0">batch_size</span><span class="s2">=</span><span class="s3">64</span><span class="s2">):</span>
+    <span class="s0">length </span><span class="s2">= </span><span class="s0">len</span><span class="s2">(</span><span class="s0">signal</span><span class="s2">)</span>
+    <span class="s0">time_points </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">arange</span><span class="s2">(</span><span class="s0">length</span><span class="s2">) / </span><span class="s0">sample_rate</span>
+    <span class="s0">freqs </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">arange</span><span class="s2">(</span><span class="s3">0</span><span class="s2">, </span><span class="s0">N </span><span class="s2">+ </span><span class="s0">freq_resolution</span><span class="s2">, </span><span class="s0">freq_resolution</span><span class="s2">)</span>
+
+    <span class="s0">filtered_freqs </span><span class="s2">= []</span>
+    <span class="s0">filtered_amplitudes </span><span class="s2">= []</span>
+
+    <span class="s4"># Obdelujemo v batchih</span>
+    <span class="s1">for </span><span class="s0">i </span><span class="s1">in </span><span class="s0">range</span><span class="s2">(</span><span class="s3">0</span><span class="s2">, </span><span class="s0">len</span><span class="s2">(</span><span class="s0">freqs</span><span class="s2">), </span><span class="s0">batch_size</span><span class="s2">):</span>
+        <span class="s0">batch_freqs </span><span class="s2">= </span><span class="s0">freqs</span><span class="s2">[</span><span class="s0">i</span><span class="s2">: </span><span class="s0">i </span><span class="s2">+ </span><span class="s0">batch_size</span><span class="s2">]</span>
+        <span class="s0">basis_matrix </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">exp</span><span class="s2">(-</span><span class="s3">2j </span><span class="s2">* </span><span class="s0">np</span><span class="s2">.</span><span class="s0">pi </span><span class="s2">* </span><span class="s0">batch_freqs</span><span class="s2">[:, </span><span class="s1">None</span><span class="s2">] * </span><span class="s0">time_points</span><span class="s2">)</span>
+        <span class="s0">coeffs </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">dot</span><span class="s2">(</span><span class="s0">basis_matrix</span><span class="s2">, </span><span class="s0">signal</span><span class="s2">)</span>
+        <span class="s0">batch_amplitudes </span><span class="s2">= </span><span class="s3">2 </span><span class="s2">* </span><span class="s0">np</span><span class="s2">.</span><span class="s0">abs</span><span class="s2">(</span><span class="s0">coeffs</span><span class="s2">) / </span><span class="s0">length  </span><span class="s4"># normalizacija</span>
+
+        <span class="s0">mask </span><span class="s2">= </span><span class="s0">batch_amplitudes </span><span class="s2">&gt;= </span><span class="s0">threshold</span>
+        <span class="s0">filtered_freqs</span><span class="s2">.</span><span class="s0">append</span><span class="s2">(</span><span class="s0">batch_freqs</span><span class="s2">[</span><span class="s0">mask</span><span class="s2">])</span>
+        <span class="s0">filtered_amplitudes</span><span class="s2">.</span><span class="s0">append</span><span class="s2">(</span><span class="s0">batch_amplitudes</span><span class="s2">[</span><span class="s0">mask</span><span class="s2">])</span>
+
+    <span class="s4"># Združimo rezultate iz vseh batchov</span>
+    <span class="s1">if </span><span class="s0">filtered_freqs</span><span class="s2">:</span>
+        <span class="s0">freqs_filtered </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">concatenate</span><span class="s2">(</span><span class="s0">filtered_freqs</span><span class="s2">)</span>
+        <span class="s0">amplitudes_filtered </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">concatenate</span><span class="s2">(</span><span class="s0">filtered_amplitudes</span><span class="s2">)</span>
+    <span class="s1">else</span><span class="s2">:</span>
+        <span class="s0">freqs_filtered </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">array</span><span class="s2">([])</span>
+        <span class="s0">amplitudes_filtered </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">array</span><span class="s2">([])</span>
+
+    <span class="s1">return </span><span class="s0">freqs_filtered</span><span class="s2">, </span><span class="s0">amplitudes_filtered</span>
+<hr class="ls0"><span class="s0">#%% 
+</span><span class="s1">def </span><span class="s0">plot_dft_amplitudes</span><span class="s2">(</span><span class="s0">freqs</span><span class="s2">, </span><span class="s0">amplitudes</span><span class="s2">, </span><span class="s0">title</span><span class="s2">=</span><span class="s5">&quot;DFT Amplitudes&quot;</span><span class="s2">):</span>
+    <span class="s0">plt</span><span class="s2">.</span><span class="s0">figure</span><span class="s2">(</span><span class="s0">figsize</span><span class="s2">=(</span><span class="s3">10</span><span class="s2">, </span><span class="s3">5</span><span class="s2">))</span>
+    <span class="s0">plt</span><span class="s2">.</span><span class="s0">plot</span><span class="s2">(</span><span class="s0">freqs</span><span class="s2">, </span><span class="s0">amplitudes</span><span class="s2">)</span>
+    <span class="s0">plt</span><span class="s2">.</span><span class="s0">xlabel</span><span class="s2">(</span><span class="s5">&quot;Frequency (Hz)&quot;</span><span class="s2">)</span>
+    <span class="s0">plt</span><span class="s2">.</span><span class="s0">ylabel</span><span class="s2">(</span><span class="s5">&quot;Amplitude&quot;</span><span class="s2">)</span>
+    <span class="s0">plt</span><span class="s2">.</span><span class="s0">title</span><span class="s2">(</span><span class="s0">title</span><span class="s2">)</span>
+    <span class="s0">plt</span><span class="s2">.</span><span class="s0">grid</span><span class="s2">(</span><span class="s1">True</span><span class="s2">)</span>
+    <span class="s0">plt</span><span class="s2">.</span><span class="s0">show</span><span class="s2">()</span><hr class="ls0"><span class="s0">#%% 
+rpm_data </span><span class="s2">= [</span>
+    <span class="s2">{</span><span class="s5">&quot;filename&quot;</span><span class="s2">: </span><span class="s5">&quot;sig_a_1.wav&quot;</span><span class="s2">, </span><span class="s5">&quot;blades&quot;</span><span class="s2">: </span><span class="s3">10</span><span class="s2">, </span><span class="s5">&quot;rpm_range&quot;</span><span class="s2">: (</span><span class="s3">1100</span><span class="s2">, </span><span class="s3">1600</span><span class="s2">)},</span>
+    <span class="s2">{</span><span class="s5">&quot;filename&quot;</span><span class="s2">: </span><span class="s5">&quot;sig_b_1.wav&quot;</span><span class="s2">, </span><span class="s5">&quot;blades&quot;</span><span class="s2">: </span><span class="s3">5</span><span class="s2">, </span><span class="s5">&quot;rpm_range&quot;</span><span class="s2">: (</span><span class="s3">2200</span><span class="s2">, </span><span class="s3">2800</span><span class="s2">)},</span>
+    <span class="s2">{</span><span class="s5">&quot;filename&quot;</span><span class="s2">: </span><span class="s5">&quot;sig_c_1.wav&quot;</span><span class="s2">, </span><span class="s5">&quot;blades&quot;</span><span class="s2">: </span><span class="s3">3</span><span class="s2">, </span><span class="s5">&quot;rpm_range&quot;</span><span class="s2">: (</span><span class="s3">400</span><span class="s2">, </span><span class="s3">900</span><span class="s2">)},</span>
+    <span class="s2">{</span><span class="s5">&quot;filename&quot;</span><span class="s2">: </span><span class="s5">&quot;sig_c_2.wav&quot;</span><span class="s2">, </span><span class="s5">&quot;blades&quot;</span><span class="s2">: </span><span class="s3">3</span><span class="s2">, </span><span class="s5">&quot;rpm_range&quot;</span><span class="s2">: (</span><span class="s3">800</span><span class="s2">, </span><span class="s3">1400</span><span class="s2">)},</span>
+    <span class="s2">{</span><span class="s5">&quot;filename&quot;</span><span class="s2">: </span><span class="s5">&quot;sig_c_3.wav&quot;</span><span class="s2">, </span><span class="s5">&quot;blades&quot;</span><span class="s2">: </span><span class="s3">3</span><span class="s2">, </span><span class="s5">&quot;rpm_range&quot;</span><span class="s2">: (</span><span class="s3">2200</span><span class="s2">, </span><span class="s3">2950</span><span class="s2">)},</span>
+    <span class="s2">{</span><span class="s5">&quot;filename&quot;</span><span class="s2">: </span><span class="s5">&quot;sig_c_4.wav&quot;</span><span class="s2">, </span><span class="s5">&quot;blades&quot;</span><span class="s2">: </span><span class="s3">3</span><span class="s2">, </span><span class="s5">&quot;rpm_range&quot;</span><span class="s2">: (</span><span class="s3">1950</span><span class="s2">, </span><span class="s3">2400</span><span class="s2">)},</span>
+    <span class="s2">{</span><span class="s5">&quot;filename&quot;</span><span class="s2">: </span><span class="s5">&quot;sig_c_5.wav&quot;</span><span class="s2">, </span><span class="s5">&quot;blades&quot;</span><span class="s2">: </span><span class="s3">3</span><span class="s2">, </span><span class="s5">&quot;rpm_range&quot;</span><span class="s2">: (</span><span class="s3">1300</span><span class="s2">, </span><span class="s3">1600</span><span class="s2">)},</span>
+    <span class="s2">{</span><span class="s5">&quot;filename&quot;</span><span class="s2">: </span><span class="s5">&quot;sig_c_6.wav&quot;</span><span class="s2">, </span><span class="s5">&quot;blades&quot;</span><span class="s2">: </span><span class="s3">3</span><span class="s2">, </span><span class="s5">&quot;rpm_range&quot;</span><span class="s2">: (</span><span class="s3">1900</span><span class="s2">, </span><span class="s3">2300</span><span class="s2">)},</span>
+    <span class="s2">{</span><span class="s5">&quot;filename&quot;</span><span class="s2">: </span><span class="s5">&quot;sig_c_7.wav&quot;</span><span class="s2">, </span><span class="s5">&quot;blades&quot;</span><span class="s2">: </span><span class="s3">3</span><span class="s2">, </span><span class="s5">&quot;rpm_range&quot;</span><span class="s2">: (</span><span class="s3">1700</span><span class="s2">, </span><span class="s3">2000</span><span class="s2">)},</span>
+<span class="s2">]</span><hr class="ls0"><span class="s0">#%% 
+</span><span class="s1">import </span><span class="s0">os</span>
+
+<span class="s1">def </span><span class="s0">procesiraj_posketke</span><span class="s2">():</span>
+    <span class="s0">N </span><span class="s2">= </span><span class="s3">1024</span>
+    <span class="s0">folder </span><span class="s2">= </span><span class="s5">'rpm'</span>
+    <span class="s1">for </span><span class="s0">entry </span><span class="s1">in </span><span class="s0">rpm_data</span><span class="s2">:</span>
+        <span class="s0">filename</span><span class="s2">, </span><span class="s0">blades</span><span class="s2">, </span><span class="s0">rpm_range </span><span class="s2">= </span><span class="s0">entry</span><span class="s2">[</span><span class="s5">'filename'</span><span class="s2">], </span><span class="s0">entry</span><span class="s2">[</span><span class="s5">'blades'</span><span class="s2">], </span><span class="s0">entry</span><span class="s2">[</span><span class="s5">'rpm_range'</span><span class="s2">]</span>
+        <span class="s0">filepath </span><span class="s2">= </span><span class="s0">os</span><span class="s2">.</span><span class="s0">path</span><span class="s2">.</span><span class="s0">join</span><span class="s2">(</span><span class="s0">folder</span><span class="s2">, </span><span class="s0">filename</span><span class="s2">)</span>
+        <span class="s0">sample_rate</span><span class="s2">, </span><span class="s0">signal </span><span class="s2">= </span><span class="s0">read</span><span class="s2">(</span><span class="s0">filepath</span><span class="s2">)</span>
+        <span class="s0">y </span><span class="s2">= (</span><span class="s0">signal </span><span class="s2">/ </span><span class="s0">np</span><span class="s2">.</span><span class="s0">max</span><span class="s2">(</span><span class="s0">np</span><span class="s2">.</span><span class="s0">abs</span><span class="s2">(</span><span class="s0">signal</span><span class="s2">))).</span><span class="s0">astype</span><span class="s2">(</span><span class="s0">np</span><span class="s2">.</span><span class="s0">float32</span><span class="s2">)</span>
+
+        <span class="s0">freqs</span><span class="s2">, </span><span class="s0">amplitudes </span><span class="s2">= </span><span class="s0">compute_dft_complex</span><span class="s2">(</span><span class="s0">y</span><span class="s2">, </span><span class="s0">sample_rate</span><span class="s2">, </span><span class="s0">N</span><span class="s2">, </span><span class="s0">freq_resolution</span><span class="s2">=</span><span class="s3">1</span><span class="s2">, </span><span class="s0">threshold</span><span class="s2">=</span><span class="s3">0.0</span><span class="s2">)</span>
+
+        <span class="s0">freq_range </span><span class="s2">= (</span><span class="s0">rpm_range</span><span class="s2">[</span><span class="s3">0</span><span class="s2">] * </span><span class="s0">blades</span><span class="s2">) / </span><span class="s3">60</span><span class="s2">, (</span><span class="s0">rpm_range</span><span class="s2">[</span><span class="s3">1</span><span class="s2">] * </span><span class="s0">blades</span><span class="s2">) / </span><span class="s3">60</span>
+        <span class="s0">mask </span><span class="s2">= (</span><span class="s0">freqs </span><span class="s2">&gt;= </span><span class="s0">freq_range</span><span class="s2">[</span><span class="s3">0</span><span class="s2">]) &amp; (</span><span class="s0">freqs </span><span class="s2">&lt;= </span><span class="s0">freq_range</span><span class="s2">[</span><span class="s3">1</span><span class="s2">])</span>
+        <span class="s0">dominant_freq </span><span class="s2">= </span><span class="s0">freqs</span><span class="s2">[</span><span class="s0">mask</span><span class="s2">][</span><span class="s0">np</span><span class="s2">.</span><span class="s0">argmax</span><span class="s2">(</span><span class="s0">amplitudes</span><span class="s2">[</span><span class="s0">mask</span><span class="s2">])]</span>
+        <span class="s0">rpm </span><span class="s2">= </span><span class="s3">60 </span><span class="s2">* </span><span class="s0">dominant_freq </span><span class="s2">/ </span><span class="s0">blades</span>
+        <span class="s0">harmonics </span><span class="s2">= </span><span class="s0">dominant_freq </span><span class="s2">* </span><span class="s0">np</span><span class="s2">.</span><span class="s0">arange</span><span class="s2">(</span><span class="s3">2</span><span class="s2">, </span><span class="s0">int</span><span class="s2">(</span><span class="s0">N </span><span class="s2">// </span><span class="s0">dominant_freq</span><span class="s2">) + </span><span class="s3">1</span><span class="s2">)</span>
+
+        <span class="s0">plt</span><span class="s2">.</span><span class="s0">figure</span><span class="s2">(</span><span class="s0">figsize</span><span class="s2">=(</span><span class="s3">10</span><span class="s2">, </span><span class="s3">4</span><span class="s2">))</span>
+        <span class="s0">plt</span><span class="s2">.</span><span class="s0">plot</span><span class="s2">(</span><span class="s0">freqs</span><span class="s2">, </span><span class="s0">amplitudes</span><span class="s2">, </span><span class="s0">label</span><span class="s2">=</span><span class="s5">'DFT Spectrum'</span><span class="s2">)</span>
+        <span class="s0">plt</span><span class="s2">.</span><span class="s0">axvline</span><span class="s2">(</span><span class="s0">dominant_freq</span><span class="s2">, </span><span class="s0">color</span><span class="s2">=</span><span class="s5">'red'</span><span class="s2">, </span><span class="s0">linestyle</span><span class="s2">=</span><span class="s5">'--'</span><span class="s2">, </span><span class="s0">label</span><span class="s2">=</span><span class="s5">f'Dominant frequency'</span><span class="s2">)</span>
+
+        <span class="s0">plt</span><span class="s2">.</span><span class="s0">axvline</span><span class="s2">(</span><span class="s0">freq_range</span><span class="s2">[</span><span class="s3">0</span><span class="s2">], </span><span class="s0">color</span><span class="s2">=</span><span class="s5">'green'</span><span class="s2">, </span><span class="s0">linestyle</span><span class="s2">=</span><span class="s5">'--'</span><span class="s2">, </span><span class="s0">alpha</span><span class="s2">=</span><span class="s3">0.7</span><span class="s2">, </span><span class="s0">label</span><span class="s2">=</span><span class="s5">'Expected range'</span><span class="s2">)</span>
+        <span class="s0">plt</span><span class="s2">.</span><span class="s0">axvline</span><span class="s2">(</span><span class="s0">freq_range</span><span class="s2">[</span><span class="s3">1</span><span class="s2">], </span><span class="s0">color</span><span class="s2">=</span><span class="s5">'green'</span><span class="s2">, </span><span class="s0">linestyle</span><span class="s2">=</span><span class="s5">'--'</span><span class="s2">, </span><span class="s0">alpha</span><span class="s2">=</span><span class="s3">0.7</span><span class="s2">)</span>
+
+        <span class="s1">for </span><span class="s0">i</span><span class="s2">, </span><span class="s0">h </span><span class="s1">in </span><span class="s0">enumerate</span><span class="s2">(</span><span class="s0">harmonics</span><span class="s2">):</span>
+            <span class="s0">label </span><span class="s2">= </span><span class="s5">'Harmonics' </span><span class="s1">if </span><span class="s0">i </span><span class="s2">== </span><span class="s3">0 </span><span class="s1">else None</span>
+            <span class="s0">plt</span><span class="s2">.</span><span class="s0">axvline</span><span class="s2">(</span><span class="s0">h</span><span class="s2">, </span><span class="s0">color</span><span class="s2">=</span><span class="s5">'orange'</span><span class="s2">, </span><span class="s0">linestyle</span><span class="s2">=</span><span class="s5">':'</span><span class="s2">, </span><span class="s0">alpha</span><span class="s2">=</span><span class="s3">0.6</span><span class="s2">, </span><span class="s0">label</span><span class="s2">=</span><span class="s0">label</span><span class="s2">)</span>
+
+        <span class="s0">plt</span><span class="s2">.</span><span class="s0">title</span><span class="s2">(</span><span class="s5">f&quot;Frequency Spectrum - </span><span class="s1">{</span><span class="s0">filename</span><span class="s1">}</span><span class="s5">&quot;</span><span class="s2">)</span>
+        <span class="s0">plt</span><span class="s2">.</span><span class="s0">xlabel</span><span class="s2">(</span><span class="s5">&quot;Frequency [Hz]&quot;</span><span class="s2">)</span>
+        <span class="s0">plt</span><span class="s2">.</span><span class="s0">ylabel</span><span class="s2">(</span><span class="s5">&quot;Amplitude&quot;</span><span class="s2">)</span>
+        <span class="s0">plt</span><span class="s2">.</span><span class="s0">legend</span><span class="s2">()</span>
+        <span class="s0">plt</span><span class="s2">.</span><span class="s0">tight_layout</span><span class="s2">()</span>
+        <span class="s0">plt</span><span class="s2">.</span><span class="s0">grid</span><span class="s2">(</span><span class="s1">True</span><span class="s2">)</span>
+        <span class="s0">plt</span><span class="s2">.</span><span class="s0">show</span><span class="s2">()</span>
+
+        <span class="s0">print</span><span class="s2">(</span><span class="s5">f&quot;Processed file: </span><span class="s1">{</span><span class="s0">filename</span><span class="s1">}\n</span><span class="s5">Dominant frequency: </span><span class="s1">{</span><span class="s0">dominant_freq</span><span class="s1">:</span><span class="s5">.1f</span><span class="s1">} </span><span class="s5">Hz | Detected RPM: </span><span class="s1">{</span><span class="s0">rpm</span><span class="s1">} </span><span class="s5">RPM&quot;</span><span class="s2">)</span>
+
+
+<span class="s0">procesiraj_posketke</span><span class="s2">()</span></pre>
+</body>
+</html>

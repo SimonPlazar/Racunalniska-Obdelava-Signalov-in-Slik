@@ -1,0 +1,97 @@
+<html>
+<head>
+<title>porocilo.ipynb</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #bcbec4;}
+.s1 { color: #cf8e6d;}
+.s2 { color: #bcbec4;}
+.s3 { color: #2aacb8;}
+.s4 { color: #7a7e85;}
+.s5 { color: #6aab73;}
+.ls0 { height: 1px; border-width: 0; color: #43454a; background-color:#43454a}
+</style>
+</head>
+<body bgcolor="#1e1f22">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+porocilo.ipynb</font>
+</center></td></tr></table>
+<pre><span class="s0">#%% md 
+# STDFT in Analize signalov <hr class="ls0">#%% 
+</span><span class="s1">import </span><span class="s0">numpy </span><span class="s1">as </span><span class="s0">np</span>
+<span class="s1">import </span><span class="s0">matplotlib</span><span class="s2">.</span><span class="s0">pyplot </span><span class="s1">as </span><span class="s0">plt</span><hr class="ls0"><span class="s0">#%% 
+</span><span class="s1">def </span><span class="s0">compute_stdft</span><span class="s2">(</span><span class="s0">signal</span><span class="s2">, </span><span class="s0">sample_rate</span><span class="s2">, </span><span class="s0">window_ms</span><span class="s2">, </span><span class="s0">overlap_ratio</span><span class="s2">):</span>
+    <span class="s0">window_len </span><span class="s2">= </span><span class="s0">int</span><span class="s2">((</span><span class="s0">window_ms </span><span class="s2">/ </span><span class="s3">1000</span><span class="s2">) * </span><span class="s0">sample_rate</span><span class="s2">)</span>
+    <span class="s0">hop_size </span><span class="s2">= </span><span class="s0">int</span><span class="s2">(</span><span class="s0">window_len </span><span class="s2">* (</span><span class="s3">1 </span><span class="s2">- </span><span class="s0">overlap_ratio</span><span class="s2">))</span>
+    <span class="s4"># print(f&quot;Window length: {window_len} samples, Hop size: {hop_size} samples&quot;)</span>
+
+    <span class="s0">window </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">hamming</span><span class="s2">(</span><span class="s0">window_len</span><span class="s2">)</span>
+
+    <span class="s4"># Računanje števila frame-ov in dopolnitev z ničlami (padding)</span>
+    <span class="s0">num_frames </span><span class="s2">= </span><span class="s0">int</span><span class="s2">(</span><span class="s0">np</span><span class="s2">.</span><span class="s0">ceil</span><span class="s2">((</span><span class="s0">len</span><span class="s2">(</span><span class="s0">signal</span><span class="s2">) - </span><span class="s0">window_len</span><span class="s2">) / </span><span class="s0">hop_size</span><span class="s2">)) + </span><span class="s3">1</span>
+    <span class="s0">total_len </span><span class="s2">= </span><span class="s0">hop_size </span><span class="s2">* (</span><span class="s0">num_frames </span><span class="s2">- </span><span class="s3">1</span><span class="s2">) + </span><span class="s0">window_len</span>
+    <span class="s0">padded_signal </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">pad</span><span class="s2">(</span><span class="s0">signal</span><span class="s2">, (</span><span class="s3">0</span><span class="s2">, </span><span class="s0">total_len </span><span class="s2">- </span><span class="s0">len</span><span class="s2">(</span><span class="s0">signal</span><span class="s2">)), </span><span class="s0">mode</span><span class="s2">=</span><span class="s5">'constant'</span><span class="s2">)</span>
+
+    <span class="s0">stft_result </span><span class="s2">= []</span>
+
+    <span class="s1">for </span><span class="s0">i </span><span class="s1">in </span><span class="s0">range</span><span class="s2">(</span><span class="s0">num_frames</span><span class="s2">):</span>
+        <span class="s0">start </span><span class="s2">= </span><span class="s0">i </span><span class="s2">* </span><span class="s0">hop_size</span>
+        <span class="s0">end </span><span class="s2">= </span><span class="s0">start </span><span class="s2">+ </span><span class="s0">window_len</span>
+        <span class="s0">frame </span><span class="s2">= </span><span class="s0">padded_signal</span><span class="s2">[</span><span class="s0">start</span><span class="s2">:</span><span class="s0">end</span><span class="s2">] * </span><span class="s0">window</span>
+        <span class="s0">spectrum </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">fft</span><span class="s2">.</span><span class="s0">fft</span><span class="s2">(</span><span class="s0">frame</span><span class="s2">, </span><span class="s0">n</span><span class="s2">=</span><span class="s0">window_len</span><span class="s2">)</span>
+        <span class="s0">stft_result</span><span class="s2">.</span><span class="s0">append</span><span class="s2">(</span><span class="s0">np</span><span class="s2">.</span><span class="s0">abs</span><span class="s2">(</span><span class="s0">spectrum</span><span class="s2">[:</span><span class="s0">window_len </span><span class="s2">// </span><span class="s3">2</span><span class="s2">]))</span>
+
+    <span class="s0">stft_matrix </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">array</span><span class="s2">(</span><span class="s0">stft_result</span><span class="s2">).</span><span class="s0">T  </span><span class="s4"># shape: [freq, times]</span>
+
+    <span class="s0">freqs </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">fft</span><span class="s2">.</span><span class="s0">fftfreq</span><span class="s2">(</span><span class="s0">window_len</span><span class="s2">, </span><span class="s0">d</span><span class="s2">=</span><span class="s3">1</span><span class="s2">/</span><span class="s0">sample_rate</span><span class="s2">)[:</span><span class="s0">window_len </span><span class="s2">// </span><span class="s3">2</span><span class="s2">]</span>
+    <span class="s0">times </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">arange</span><span class="s2">(</span><span class="s0">num_frames</span><span class="s2">) * </span><span class="s0">hop_size </span><span class="s2">/ </span><span class="s0">sample_rate</span>
+
+    <span class="s1">return </span><span class="s0">freqs</span><span class="s2">, </span><span class="s0">times</span><span class="s2">, </span><span class="s0">stft_matrix</span><hr class="ls0"><span class="s0">#%% 
+</span><span class="s1">import </span><span class="s0">os</span>
+
+<span class="s1">def </span><span class="s0">procesiraj_posketke</span><span class="s2">():</span>
+    <span class="s0">folder </span><span class="s2">= </span><span class="s5">'rpm_vib'</span>
+    <span class="s0">files </span><span class="s2">= [</span><span class="s0">f </span><span class="s1">for </span><span class="s0">f </span><span class="s1">in </span><span class="s0">os</span><span class="s2">.</span><span class="s0">listdir</span><span class="s2">(</span><span class="s0">folder</span><span class="s2">) </span><span class="s1">if </span><span class="s0">f</span><span class="s2">.</span><span class="s0">lower</span><span class="s2">().</span><span class="s0">endswith</span><span class="s2">(</span><span class="s5">'.csv'</span><span class="s2">)]</span>
+    <span class="s1">for </span><span class="s0">file </span><span class="s1">in </span><span class="s0">files</span><span class="s2">[:]:</span>
+        <span class="s0">filepath </span><span class="s2">= </span><span class="s0">os</span><span class="s2">.</span><span class="s0">path</span><span class="s2">.</span><span class="s0">join</span><span class="s2">(</span><span class="s0">folder</span><span class="s2">, </span><span class="s0">file</span><span class="s2">)</span>
+
+        <span class="s0">data </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">loadtxt</span><span class="s2">(</span><span class="s0">filepath</span><span class="s2">, </span><span class="s0">delimiter</span><span class="s2">=</span><span class="s5">','</span><span class="s2">)</span>
+        <span class="s0">y </span><span class="s2">= (</span><span class="s0">data </span><span class="s2">/ </span><span class="s0">np</span><span class="s2">.</span><span class="s0">max</span><span class="s2">(</span><span class="s0">np</span><span class="s2">.</span><span class="s0">abs</span><span class="s2">(</span><span class="s0">data</span><span class="s2">))).</span><span class="s0">astype</span><span class="s2">(</span><span class="s0">np</span><span class="s2">.</span><span class="s0">float32</span><span class="s2">)</span>
+
+        <span class="s0">freqs</span><span class="s2">, </span><span class="s0">times</span><span class="s2">, </span><span class="s0">stft </span><span class="s2">= </span><span class="s0">compute_stdft</span><span class="s2">(</span><span class="s0">y</span><span class="s2">, </span><span class="s0">sample_rate</span><span class="s2">=</span><span class="s3">256</span><span class="s2">, </span><span class="s0">window_ms</span><span class="s2">=</span><span class="s3">1000</span><span class="s2">, </span><span class="s0">overlap_ratio</span><span class="s2">=</span><span class="s3">0.75</span><span class="s2">)</span>
+
+        <span class="s0">fmin</span><span class="s2">, </span><span class="s0">fmax </span><span class="s2">= </span><span class="s3">500</span><span class="s2">/</span><span class="s3">60</span><span class="s2">, </span><span class="s3">2500</span><span class="s2">/</span><span class="s3">60</span>
+        <span class="s0">mask </span><span class="s2">= (</span><span class="s0">freqs </span><span class="s2">&gt;= </span><span class="s0">fmin</span><span class="s2">) &amp; (</span><span class="s0">freqs </span><span class="s2">&lt;= </span><span class="s0">fmax</span><span class="s2">)</span>
+        <span class="s0">freqs_filtered </span><span class="s2">= </span><span class="s0">freqs</span><span class="s2">[</span><span class="s0">mask</span><span class="s2">]</span>
+        <span class="s0">stft_filtered </span><span class="s2">= </span><span class="s0">stft</span><span class="s2">[</span><span class="s0">mask</span><span class="s2">, :]</span>
+
+        <span class="s4"># Dominantna frekvenca v vsakem časovnem segmentu</span>
+        <span class="s0">dominant_indices </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">argmax</span><span class="s2">(</span><span class="s0">stft_filtered</span><span class="s2">, </span><span class="s0">axis</span><span class="s2">=</span><span class="s3">0</span><span class="s2">)</span>
+        <span class="s0">dominant_freqs </span><span class="s2">= </span><span class="s0">freqs_filtered</span><span class="s2">[</span><span class="s0">dominant_indices</span><span class="s2">]</span>
+        <span class="s0">dominant_rpm </span><span class="s2">= </span><span class="s0">dominant_freqs </span><span class="s2">* </span><span class="s3">60</span>
+
+        <span class="s0">plt</span><span class="s2">.</span><span class="s0">figure</span><span class="s2">(</span><span class="s0">figsize</span><span class="s2">=(</span><span class="s3">12</span><span class="s2">, </span><span class="s3">6</span><span class="s2">))</span>
+        <span class="s4"># freqs_filtered*60 da pretvorimo v RPM</span>
+        <span class="s0">plt</span><span class="s2">.</span><span class="s0">pcolormesh</span><span class="s2">(</span><span class="s0">times</span><span class="s2">, </span><span class="s0">freqs_filtered</span><span class="s2">*</span><span class="s3">60</span><span class="s2">,</span>
+                       <span class="s3">20</span><span class="s2">*</span><span class="s0">np</span><span class="s2">.</span><span class="s0">log10</span><span class="s2">(</span><span class="s0">stft_filtered</span><span class="s2">+</span><span class="s3">1e-6</span><span class="s2">), </span><span class="s0">shading</span><span class="s2">=</span><span class="s5">'gouraud'</span><span class="s2">)</span>
+        <span class="s0">plt</span><span class="s2">.</span><span class="s0">colorbar</span><span class="s2">(</span><span class="s0">label</span><span class="s2">=</span><span class="s5">&quot;Amplituda&quot;</span><span class="s2">)</span>
+        <span class="s0">plt</span><span class="s2">.</span><span class="s0">ylabel</span><span class="s2">(</span><span class="s5">&quot;Hitrost vrtljajev&quot;</span><span class="s2">)</span>
+        <span class="s0">plt</span><span class="s2">.</span><span class="s0">xlabel</span><span class="s2">(</span><span class="s5">&quot;Čas [s]&quot;</span><span class="s2">)</span>
+        <span class="s0">plt</span><span class="s2">.</span><span class="s0">title</span><span class="s2">(</span><span class="s5">f&quot;Spektrogram motornih vibracij – </span><span class="s1">{</span><span class="s0">file</span><span class="s1">}</span><span class="s5">&quot;</span><span class="s2">)</span>
+
+        <span class="s4"># plt.plot(times, dominant_rpm, color=&quot;red&quot;, linewidth=2, label=&quot;Ocena RPM&quot;)</span>
+        <span class="s0">points </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">linspace</span><span class="s2">(</span><span class="s3">32</span><span class="s2">, </span><span class="s0">len</span><span class="s2">(</span><span class="s0">times</span><span class="s2">)-</span><span class="s3">96</span><span class="s2">, </span><span class="s3">5</span><span class="s2">, </span><span class="s0">dtype</span><span class="s2">=</span><span class="s0">int</span><span class="s2">)</span>
+        <span class="s0">plt</span><span class="s2">.</span><span class="s0">plot</span><span class="s2">(</span><span class="s0">times</span><span class="s2">[</span><span class="s0">points</span><span class="s2">], </span><span class="s0">dominant_rpm</span><span class="s2">[</span><span class="s0">points</span><span class="s2">], </span><span class="s5">'o-'</span><span class="s2">, </span><span class="s0">linewidth</span><span class="s2">=</span><span class="s3">2</span><span class="s2">, </span><span class="s0">label</span><span class="s2">=</span><span class="s5">&quot;Ocena RPM&quot;</span><span class="s2">)</span>
+        <span class="s1">for </span><span class="s0">idx </span><span class="s1">in </span><span class="s0">points</span><span class="s2">: </span><span class="s4"># oznake</span>
+            <span class="s0">plt</span><span class="s2">.</span><span class="s0">text</span><span class="s2">(</span><span class="s0">times</span><span class="s2">[</span><span class="s0">idx</span><span class="s2">], </span><span class="s0">dominant_rpm</span><span class="s2">[</span><span class="s0">idx</span><span class="s2">]+</span><span class="s3">20</span><span class="s2">, </span><span class="s5">f&quot;</span><span class="s1">{</span><span class="s0">int</span><span class="s2">(</span><span class="s0">dominant_rpm</span><span class="s2">[</span><span class="s0">idx</span><span class="s2">])</span><span class="s1">}</span><span class="s5">&quot;</span><span class="s2">, </span><span class="s0">fontsize</span><span class="s2">=</span><span class="s3">9</span><span class="s2">, </span><span class="s0">ha</span><span class="s2">=</span><span class="s5">'center'</span><span class="s2">)</span>
+
+        <span class="s0">plt</span><span class="s2">.</span><span class="s0">ylim</span><span class="s2">(</span><span class="s3">500</span><span class="s2">, </span><span class="s3">2500</span><span class="s2">)</span>
+        <span class="s0">plt</span><span class="s2">.</span><span class="s0">legend</span><span class="s2">()</span>
+        <span class="s0">plt</span><span class="s2">.</span><span class="s0">show</span><span class="s2">()</span>
+
+
+<span class="s0">procesiraj_posketke</span><span class="s2">()</span></pre>
+</body>
+</html>

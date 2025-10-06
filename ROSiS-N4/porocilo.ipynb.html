@@ -1,0 +1,162 @@
+<html>
+<head>
+<title>porocilo.ipynb</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #bcbec4;}
+.s1 { color: #cf8e6d;}
+.s2 { color: #bcbec4;}
+.s3 { color: #2aacb8;}
+.s4 { color: #7a7e85;}
+.s5 { color: #6aab73;}
+.ls0 { height: 1px; border-width: 0; color: #43454a; background-color:#43454a}
+</style>
+</head>
+<body bgcolor="#1e1f22">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+porocilo.ipynb</font>
+</center></td></tr></table>
+<pre><span class="s0">#%% md 
+# STDFT - Kratkočasovna diskretna fourierjeva transformacija (ST-DFT) <hr class="ls0">#%% 
+</span><span class="s1">from </span><span class="s0">scipy</span><span class="s2">.</span><span class="s0">io</span><span class="s2">.</span><span class="s0">wavfile </span><span class="s1">import </span><span class="s0">read</span>
+<span class="s1">import </span><span class="s0">numpy </span><span class="s1">as </span><span class="s0">np</span>
+<span class="s1">import </span><span class="s0">matplotlib</span><span class="s2">.</span><span class="s0">pyplot </span><span class="s1">as </span><span class="s0">plt</span><hr class="ls0"><span class="s0">#%% 
+</span><span class="s1">def </span><span class="s0">compute_stdft</span><span class="s2">(</span><span class="s0">signal</span><span class="s2">, </span><span class="s0">sample_rate</span><span class="s2">, </span><span class="s0">window_ms</span><span class="s2">, </span><span class="s0">overlap_ratio</span><span class="s2">, </span><span class="s0">window_fn</span><span class="s2">):</span>
+    <span class="s0">window_len </span><span class="s2">= </span><span class="s0">int</span><span class="s2">((</span><span class="s0">window_ms </span><span class="s2">/ </span><span class="s3">1000</span><span class="s2">) * </span><span class="s0">sample_rate</span><span class="s2">)</span>
+    <span class="s0">hop_size </span><span class="s2">= </span><span class="s0">int</span><span class="s2">(</span><span class="s0">window_len </span><span class="s2">* (</span><span class="s3">1 </span><span class="s2">- </span><span class="s0">overlap_ratio</span><span class="s2">))</span>
+
+    <span class="s0">window </span><span class="s2">= </span><span class="s0">window_fn</span><span class="s2">(</span><span class="s0">window_len</span><span class="s2">)</span>
+
+    <span class="s4"># Računanje števila frame-ov in dopolnitev z ničlami (padding)</span>
+    <span class="s0">num_frames </span><span class="s2">= </span><span class="s0">int</span><span class="s2">(</span><span class="s0">np</span><span class="s2">.</span><span class="s0">ceil</span><span class="s2">((</span><span class="s0">len</span><span class="s2">(</span><span class="s0">signal</span><span class="s2">) - </span><span class="s0">window_len</span><span class="s2">) / </span><span class="s0">hop_size</span><span class="s2">)) + </span><span class="s3">1</span>
+    <span class="s0">total_len </span><span class="s2">= </span><span class="s0">hop_size </span><span class="s2">* (</span><span class="s0">num_frames </span><span class="s2">- </span><span class="s3">1</span><span class="s2">) + </span><span class="s0">window_len</span>
+    <span class="s0">padded_signal </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">pad</span><span class="s2">(</span><span class="s0">signal</span><span class="s2">, (</span><span class="s3">0</span><span class="s2">, </span><span class="s0">total_len </span><span class="s2">- </span><span class="s0">len</span><span class="s2">(</span><span class="s0">signal</span><span class="s2">)), </span><span class="s0">mode</span><span class="s2">=</span><span class="s5">'constant'</span><span class="s2">)</span>
+
+    <span class="s0">stft_result </span><span class="s2">= []</span>
+
+    <span class="s1">for </span><span class="s0">i </span><span class="s1">in </span><span class="s0">range</span><span class="s2">(</span><span class="s0">num_frames</span><span class="s2">):</span>
+        <span class="s0">start </span><span class="s2">= </span><span class="s0">i </span><span class="s2">* </span><span class="s0">hop_size</span>
+        <span class="s0">end </span><span class="s2">= </span><span class="s0">start </span><span class="s2">+ </span><span class="s0">window_len</span>
+        <span class="s0">frame </span><span class="s2">= </span><span class="s0">padded_signal</span><span class="s2">[</span><span class="s0">start</span><span class="s2">:</span><span class="s0">end</span><span class="s2">] * </span><span class="s0">window</span>
+        <span class="s0">spectrum </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">fft</span><span class="s2">.</span><span class="s0">fft</span><span class="s2">(</span><span class="s0">frame</span><span class="s2">)</span>
+        <span class="s0">stft_result</span><span class="s2">.</span><span class="s0">append</span><span class="s2">(</span><span class="s0">np</span><span class="s2">.</span><span class="s0">abs</span><span class="s2">(</span><span class="s0">spectrum</span><span class="s2">[:</span><span class="s0">window_len </span><span class="s2">// </span><span class="s3">2</span><span class="s2">]))</span>
+
+    <span class="s0">stft_matrix </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">array</span><span class="s2">(</span><span class="s0">stft_result</span><span class="s2">).</span><span class="s0">T  </span><span class="s4"># shape: [freq, times]</span>
+
+    <span class="s0">freqs </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">fft</span><span class="s2">.</span><span class="s0">fftfreq</span><span class="s2">(</span><span class="s0">window_len</span><span class="s2">, </span><span class="s0">d</span><span class="s2">=</span><span class="s3">1 </span><span class="s2">/ </span><span class="s0">sample_rate</span><span class="s2">)[:</span><span class="s0">window_len </span><span class="s2">// </span><span class="s3">2</span><span class="s2">]</span>
+    <span class="s0">times </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">arange</span><span class="s2">(</span><span class="s0">num_frames</span><span class="s2">) * </span><span class="s0">hop_size </span><span class="s2">/ </span><span class="s0">sample_rate</span>
+
+    <span class="s1">return </span><span class="s0">freqs</span><span class="s2">, </span><span class="s0">times</span><span class="s2">, </span><span class="s0">stft_matrix</span><hr class="ls0"><span class="s0">#%% 
+</span><span class="s1">def </span><span class="s0">plot_stft_section</span><span class="s2">(</span><span class="s0">filename</span><span class="s2">, </span><span class="s0">stft_results</span><span class="s2">, </span><span class="s0">window_ms</span><span class="s2">):</span>
+    <span class="s0">overlap_ratios </span><span class="s2">= </span><span class="s0">sorted</span><span class="s2">(</span><span class="s0">set</span><span class="s2">(</span><span class="s0">r</span><span class="s2">[</span><span class="s5">'overlap'</span><span class="s2">] </span><span class="s1">for </span><span class="s0">r </span><span class="s1">in </span><span class="s0">stft_results </span><span class="s1">if </span><span class="s0">r</span><span class="s2">[</span><span class="s5">'window_ms'</span><span class="s2">] == </span><span class="s0">window_ms</span><span class="s2">))</span>
+    <span class="s0">window_names </span><span class="s2">= </span><span class="s0">sorted</span><span class="s2">(</span><span class="s0">set</span><span class="s2">(</span><span class="s0">r</span><span class="s2">[</span><span class="s5">'window_name'</span><span class="s2">] </span><span class="s1">for </span><span class="s0">r </span><span class="s1">in </span><span class="s0">stft_results </span><span class="s1">if </span><span class="s0">r</span><span class="s2">[</span><span class="s5">'window_ms'</span><span class="s2">] == </span><span class="s0">window_ms</span><span class="s2">))</span>
+
+    <span class="s0">fig</span><span class="s2">, </span><span class="s0">axes </span><span class="s2">= </span><span class="s0">plt</span><span class="s2">.</span><span class="s0">subplots</span><span class="s2">(</span>
+        <span class="s3">2</span><span class="s2">, </span><span class="s3">3</span><span class="s2">, </span><span class="s0">figsize</span><span class="s2">=(</span><span class="s3">18</span><span class="s2">, </span><span class="s3">8</span><span class="s2">), </span><span class="s0">sharex</span><span class="s2">=</span><span class="s1">True</span><span class="s2">, </span><span class="s0">sharey</span><span class="s2">=</span><span class="s1">True</span><span class="s2">, </span><span class="s0">constrained_layout</span><span class="s2">=</span><span class="s1">True</span>
+    <span class="s2">)</span>
+    <span class="s0">fig</span><span class="s2">.</span><span class="s0">suptitle</span><span class="s2">(</span><span class="s5">f&quot;</span><span class="s1">{</span><span class="s0">filename</span><span class="s1">} </span><span class="s5">- Window size: </span><span class="s1">{</span><span class="s0">window_ms</span><span class="s1">} </span><span class="s5">ms&quot;</span><span class="s2">, </span><span class="s0">fontsize</span><span class="s2">=</span><span class="s3">18</span><span class="s2">)</span>
+
+    <span class="s0">pcm </span><span class="s2">= </span><span class="s1">None  </span><span class="s4"># will save last mesh for colorbar</span>
+
+    <span class="s1">for </span><span class="s0">row_idx</span><span class="s2">, </span><span class="s0">window_name </span><span class="s1">in </span><span class="s0">enumerate</span><span class="s2">(</span><span class="s0">window_names</span><span class="s2">):</span>
+        <span class="s1">for </span><span class="s0">col_idx</span><span class="s2">, </span><span class="s0">overlap </span><span class="s1">in </span><span class="s0">enumerate</span><span class="s2">(</span><span class="s0">overlap_ratios</span><span class="s2">):</span>
+            <span class="s0">ax </span><span class="s2">= </span><span class="s0">axes</span><span class="s2">[</span><span class="s0">row_idx</span><span class="s2">, </span><span class="s0">col_idx</span><span class="s2">]</span>
+
+            <span class="s4"># Find the corresponding STFT result</span>
+            <span class="s0">res </span><span class="s2">= </span><span class="s0">next</span><span class="s2">(</span><span class="s0">r </span><span class="s1">for </span><span class="s0">r </span><span class="s1">in </span><span class="s0">stft_results</span>
+                       <span class="s1">if </span><span class="s0">r</span><span class="s2">[</span><span class="s5">'window_ms'</span><span class="s2">] == </span><span class="s0">window_ms</span>
+                       <span class="s1">and </span><span class="s0">r</span><span class="s2">[</span><span class="s5">'overlap'</span><span class="s2">] == </span><span class="s0">overlap</span>
+                       <span class="s1">and </span><span class="s0">r</span><span class="s2">[</span><span class="s5">'window_name'</span><span class="s2">] == </span><span class="s0">window_name</span><span class="s2">)</span>
+
+            <span class="s1">if </span><span class="s0">res</span><span class="s2">[</span><span class="s5">'matrix'</span><span class="s2">].</span><span class="s0">size </span><span class="s2">&gt; </span><span class="s3">0</span><span class="s2">:</span>
+                <span class="s0">pcm </span><span class="s2">= </span><span class="s0">ax</span><span class="s2">.</span><span class="s0">pcolormesh</span><span class="s2">(</span>
+                    <span class="s0">res</span><span class="s2">[</span><span class="s5">'times'</span><span class="s2">], </span><span class="s0">res</span><span class="s2">[</span><span class="s5">'freqs'</span><span class="s2">], </span><span class="s0">np</span><span class="s2">.</span><span class="s0">abs</span><span class="s2">(</span><span class="s0">res</span><span class="s2">[</span><span class="s5">'matrix'</span><span class="s2">]),</span>
+                    <span class="s0">shading</span><span class="s2">=</span><span class="s5">'auto'</span><span class="s2">, </span><span class="s0">cmap</span><span class="s2">=</span><span class="s5">'viridis'</span>
+                <span class="s2">)</span>
+                <span class="s0">ax</span><span class="s2">.</span><span class="s0">set_ylim</span><span class="s2">(</span><span class="s3">0</span><span class="s2">, </span><span class="s3">2000</span><span class="s2">)</span>
+                <span class="s0">ax</span><span class="s2">.</span><span class="s0">set_aspect</span><span class="s2">(</span><span class="s5">'auto'</span><span class="s2">)</span>
+
+            <span class="s4"># Axis labels</span>
+            <span class="s0">ax</span><span class="s2">.</span><span class="s0">set_xlabel</span><span class="s2">(</span><span class="s5">&quot;Time (s)&quot;</span><span class="s2">)</span>
+            <span class="s0">ax</span><span class="s2">.</span><span class="s0">set_ylabel</span><span class="s2">(</span><span class="s5">&quot;Frequency (Hz)&quot;</span><span class="s2">, </span><span class="s0">rotation</span><span class="s2">=</span><span class="s3">90</span><span class="s2">)</span>
+
+            <span class="s4"># Column headers (overlap)</span>
+            <span class="s1">if </span><span class="s0">row_idx </span><span class="s2">== </span><span class="s3">0</span><span class="s2">:</span>
+                <span class="s0">ax</span><span class="s2">.</span><span class="s0">set_title</span><span class="s2">(</span><span class="s5">f&quot;Overlap </span><span class="s1">{</span><span class="s0">overlap</span><span class="s1">}</span><span class="s5">%&quot;</span><span class="s2">)</span>
+
+            <span class="s4"># Row labels (window name)</span>
+            <span class="s1">if </span><span class="s0">col_idx </span><span class="s2">== </span><span class="s3">0</span><span class="s2">:</span>
+                <span class="s0">ax</span><span class="s2">.</span><span class="s0">annotate</span><span class="s2">(</span>
+                    <span class="s0">window_name</span><span class="s2">, </span><span class="s0">xy</span><span class="s2">=(</span><span class="s3">0</span><span class="s2">, </span><span class="s3">0.5</span><span class="s2">), </span><span class="s0">xycoords</span><span class="s2">=</span><span class="s5">&quot;axes fraction&quot;</span><span class="s2">,</span>
+                    <span class="s0">xytext</span><span class="s2">=(-</span><span class="s3">50</span><span class="s2">, </span><span class="s3">0</span><span class="s2">), </span><span class="s0">textcoords</span><span class="s2">=</span><span class="s5">&quot;offset points&quot;</span><span class="s2">,</span>
+                    <span class="s0">va</span><span class="s2">=</span><span class="s5">&quot;center&quot;</span><span class="s2">, </span><span class="s0">ha</span><span class="s2">=</span><span class="s5">&quot;right&quot;</span><span class="s2">, </span><span class="s0">rotation</span><span class="s2">=</span><span class="s3">90</span><span class="s2">, </span><span class="s0">fontsize</span><span class="s2">=</span><span class="s3">12</span>
+                <span class="s2">)</span>
+
+    <span class="s4"># Shared colorbar on the right</span>
+    <span class="s1">if </span><span class="s0">pcm</span><span class="s2">:</span>
+        <span class="s0">cbar </span><span class="s2">= </span><span class="s0">fig</span><span class="s2">.</span><span class="s0">colorbar</span><span class="s2">(</span><span class="s0">pcm</span><span class="s2">, </span><span class="s0">ax</span><span class="s2">=</span><span class="s0">axes</span><span class="s2">, </span><span class="s0">format</span><span class="s2">=</span><span class="s5">'%.1f'</span><span class="s2">, </span><span class="s0">pad</span><span class="s2">=</span><span class="s3">0.02</span><span class="s2">, </span><span class="s0">location</span><span class="s2">=</span><span class="s5">'right'</span><span class="s2">)</span>
+        <span class="s0">cbar</span><span class="s2">.</span><span class="s0">set_label</span><span class="s2">(</span><span class="s5">&quot;Amplitude&quot;</span><span class="s2">)</span>
+
+    <span class="s0">plt</span><span class="s2">.</span><span class="s0">show</span><span class="s2">()</span>
+
+
+<span class="s1">def </span><span class="s0">plot_all_sections</span><span class="s2">(</span><span class="s0">filename</span><span class="s2">, </span><span class="s0">stft_results</span><span class="s2">):</span>
+    <span class="s0">windows_ms </span><span class="s2">= </span><span class="s0">sorted</span><span class="s2">(</span><span class="s0">set</span><span class="s2">(</span><span class="s0">r</span><span class="s2">[</span><span class="s5">'window_ms'</span><span class="s2">] </span><span class="s1">for </span><span class="s0">r </span><span class="s1">in </span><span class="s0">stft_results</span><span class="s2">))</span>
+    <span class="s1">for </span><span class="s0">w_ms </span><span class="s1">in </span><span class="s0">windows_ms</span><span class="s2">:</span>
+        <span class="s0">plot_stft_section</span><span class="s2">(</span><span class="s0">filename</span><span class="s2">, </span><span class="s0">stft_results</span><span class="s2">, </span><span class="s0">w_ms</span><span class="s2">)</span>
+<hr class="ls0"><span class="s0">#%% 
+</span><span class="s1">import </span><span class="s0">os</span>
+
+
+<span class="s1">def </span><span class="s0">procesiraj_signale</span><span class="s2">():</span>
+    <span class="s0">folder </span><span class="s2">= </span><span class="s5">'Audio'</span>
+    <span class="s0">files </span><span class="s2">= [</span><span class="s0">f </span><span class="s1">for </span><span class="s0">f </span><span class="s1">in </span><span class="s0">os</span><span class="s2">.</span><span class="s0">listdir</span><span class="s2">(</span><span class="s0">folder</span><span class="s2">) </span><span class="s1">if </span><span class="s0">f</span><span class="s2">.</span><span class="s0">lower</span><span class="s2">().</span><span class="s0">endswith</span><span class="s2">(</span><span class="s5">'.wav'</span><span class="s2">)]</span>
+    <span class="s0">windows_ms </span><span class="s2">= [</span><span class="s3">10</span><span class="s2">, </span><span class="s3">20</span><span class="s2">, </span><span class="s3">50</span><span class="s2">, </span><span class="s3">100</span><span class="s2">]</span>
+    <span class="s0">overlap_ratios </span><span class="s2">= [</span><span class="s3">0.0</span><span class="s2">, </span><span class="s3">0.5</span><span class="s2">, </span><span class="s3">0.75</span><span class="s2">]</span>
+    <span class="s0">window_types </span><span class="s2">= {</span>
+        <span class="s5">&quot;Hamming&quot;</span><span class="s2">: </span><span class="s0">np</span><span class="s2">.</span><span class="s0">hamming</span><span class="s2">,</span>
+        <span class="s5">&quot;Rectangular&quot;</span><span class="s2">: </span><span class="s1">lambda </span><span class="s0">N</span><span class="s2">: </span><span class="s0">np</span><span class="s2">.</span><span class="s0">ones</span><span class="s2">(</span><span class="s0">N</span><span class="s2">)</span>
+    <span class="s2">}</span>
+
+    <span class="s1">for </span><span class="s0">filename </span><span class="s1">in </span><span class="s0">files</span><span class="s2">[:]:</span>
+        <span class="s0">filepath </span><span class="s2">= </span><span class="s0">os</span><span class="s2">.</span><span class="s0">path</span><span class="s2">.</span><span class="s0">join</span><span class="s2">(</span><span class="s0">folder</span><span class="s2">, </span><span class="s0">filename</span><span class="s2">)</span>
+        <span class="s0">sample_rate</span><span class="s2">, </span><span class="s0">signal </span><span class="s2">= </span><span class="s0">read</span><span class="s2">(</span><span class="s0">filepath</span><span class="s2">)</span>
+        <span class="s0">y </span><span class="s2">= (</span><span class="s0">signal </span><span class="s2">/ </span><span class="s0">np</span><span class="s2">.</span><span class="s0">max</span><span class="s2">(</span><span class="s0">np</span><span class="s2">.</span><span class="s0">abs</span><span class="s2">(</span><span class="s0">signal</span><span class="s2">))).</span><span class="s0">astype</span><span class="s2">(</span><span class="s0">np</span><span class="s2">.</span><span class="s0">float32</span><span class="s2">)</span>
+
+        <span class="s0">stft_results </span><span class="s2">= []</span>
+
+        <span class="s1">for </span><span class="s0">window_ms </span><span class="s1">in </span><span class="s0">windows_ms</span><span class="s2">:</span>
+            <span class="s1">for </span><span class="s0">overlap_ratio </span><span class="s1">in </span><span class="s0">overlap_ratios</span><span class="s2">:</span>
+                <span class="s4"># for window in [np.hamming, lambda N: np.ones(N)]:</span>
+                <span class="s1">for </span><span class="s0">window_name</span><span class="s2">, </span><span class="s0">window_func </span><span class="s1">in </span><span class="s0">window_types</span><span class="s2">.</span><span class="s0">items</span><span class="s2">():</span>
+                    <span class="s0">freqs</span><span class="s2">, </span><span class="s0">times</span><span class="s2">, </span><span class="s0">stft_matrix </span><span class="s2">= </span><span class="s0">compute_stdft</span><span class="s2">(</span>
+                        <span class="s0">y</span><span class="s2">, </span><span class="s0">sample_rate</span><span class="s2">, </span><span class="s0">window_ms</span><span class="s2">, </span><span class="s0">overlap_ratio</span><span class="s2">, </span><span class="s0">window_func</span>
+                    <span class="s2">)</span>
+
+                    <span class="s0">stft_results</span><span class="s2">.</span><span class="s0">append</span><span class="s2">({</span>
+                        <span class="s5">&quot;freqs&quot;</span><span class="s2">: </span><span class="s0">freqs</span><span class="s2">,</span>
+                        <span class="s5">&quot;times&quot;</span><span class="s2">: </span><span class="s0">times</span><span class="s2">,</span>
+                        <span class="s5">&quot;matrix&quot;</span><span class="s2">: </span><span class="s0">stft_matrix</span><span class="s2">,</span>
+                        <span class="s5">&quot;window_ms&quot;</span><span class="s2">: </span><span class="s0">window_ms</span><span class="s2">,</span>
+                        <span class="s5">&quot;overlap&quot;</span><span class="s2">: </span><span class="s0">int</span><span class="s2">(</span><span class="s0">overlap_ratio </span><span class="s2">* </span><span class="s3">100</span><span class="s2">),</span>
+                        <span class="s5">&quot;window_name&quot;</span><span class="s2">: </span><span class="s0">window_name</span>
+                    <span class="s2">})</span>
+
+        <span class="s0">print</span><span class="s2">(</span><span class="s5">&quot;</span><span class="s1">\n</span><span class="s5">&quot;</span><span class="s2">)</span>
+        <span class="s0">print</span><span class="s2">(</span><span class="s5">&quot;---&quot; </span><span class="s2">* </span><span class="s3">10</span><span class="s2">, </span><span class="s5">f&quot;Processing: </span><span class="s1">{</span><span class="s0">filename</span><span class="s1">}</span><span class="s5">&quot;</span><span class="s2">, </span><span class="s5">&quot;---&quot; </span><span class="s2">* </span><span class="s3">10</span><span class="s2">)</span>
+        <span class="s0">plot_all_sections</span><span class="s2">(</span><span class="s0">filename</span><span class="s2">, </span><span class="s0">stft_results</span><span class="s2">)</span>
+
+<span class="s4"># procesiraj_signale()</span><hr class="ls0"><span class="s0">#%% md 
+1. Kako je nestacionarnost signalov odvisna od hitrosti izgovarjave oz. ali se optimalna izbira dolžine intervalov za DFT in stopnje njihovega prekrivanja razlikuje od hitrosti izgovarjave? 
+ 
+Če je govor hitri, so spremembe v signalu hitrejše. Za hitre spremembe je pametno uporabiti krajša okna, da lahko sledimo spremembam v signalu, ampak s tem izgubimo pri frekvenčni ločljivosti. Prekrivanje zvečamo pri krajših oknih, da preprečimo preskoke med segmenti. 
+ 
+2. Kako se z izbiro dolžine intervalov spreminja zaznava višjih harmonikov v frekvenčni sliki posameznih intervalov? 
+ 
+Daljše ko okno, boljša je frekvenčna ločljivost. S večjo frekvenčno ločljivostjo lahko zajamemo boljšo sliko harmonikov. pri krajših oknih se ti karmoniki zlijejo skupaj 
+ <hr class="ls0">#%% 
+procesiraj_signale</span><span class="s2">()</span></pre>
+</body>
+</html>

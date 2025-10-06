@@ -1,0 +1,153 @@
+<html>
+<head>
+<title>porocilo.ipynb</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #bcbec4;}
+.s1 { color: #cf8e6d;}
+.s2 { color: #bcbec4;}
+.s3 { color: #2aacb8;}
+.s4 { color: #7a7e85;}
+.s5 { color: #6aab73;}
+.ls0 { height: 1px; border-width: 0; color: #43454a; background-color:#43454a}
+</style>
+</head>
+<body bgcolor="#1e1f22">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+porocilo.ipynb</font>
+</center></td></tr></table>
+<pre><span class="s0">#%% md 
+# DFT - Diskretna Fourierova transformacija <hr class="ls0">#%% 
+</span><span class="s1">from </span><span class="s0">scipy</span><span class="s2">.</span><span class="s0">io</span><span class="s2">.</span><span class="s0">wavfile </span><span class="s1">import </span><span class="s0">read</span>
+<span class="s1">import </span><span class="s0">numpy </span><span class="s1">as </span><span class="s0">np</span>
+<span class="s1">import </span><span class="s0">matplotlib</span><span class="s2">.</span><span class="s0">pyplot </span><span class="s1">as </span><span class="s0">plt</span><hr class="ls0"><span class="s0">#%% 
+</span><span class="s1">def </span><span class="s0">compute_fft</span><span class="s2">(</span><span class="s0">signal</span><span class="s2">, </span><span class="s0">sample_rate</span><span class="s2">, </span><span class="s0">N</span><span class="s2">):</span>
+    <span class="s0">length </span><span class="s2">= </span><span class="s0">len</span><span class="s2">(</span><span class="s0">signal</span><span class="s2">)</span>
+    <span class="s0">fft_result </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">fft</span><span class="s2">.</span><span class="s0">fft</span><span class="s2">(</span><span class="s0">signal</span><span class="s2">)</span>
+    <span class="s0">freqs </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">fft</span><span class="s2">.</span><span class="s0">fftfreq</span><span class="s2">(</span><span class="s0">len</span><span class="s2">(</span><span class="s0">signal</span><span class="s2">), </span><span class="s0">d</span><span class="s2">=</span><span class="s3">1</span><span class="s2">/</span><span class="s0">sample_rate</span><span class="s2">)</span>
+
+    <span class="s0">mask </span><span class="s2">= (</span><span class="s0">freqs </span><span class="s2">&gt;= </span><span class="s3">0</span><span class="s2">) &amp; (</span><span class="s0">freqs </span><span class="s2">&lt; </span><span class="s0">N</span><span class="s2">)</span>
+    <span class="s0">fft_result </span><span class="s2">= </span><span class="s0">fft_result</span><span class="s2">[</span><span class="s0">mask</span><span class="s2">]</span>
+    <span class="s0">freqs </span><span class="s2">= </span><span class="s0">freqs</span><span class="s2">[</span><span class="s0">mask</span><span class="s2">]</span>
+
+    <span class="s0">amplitudes </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">abs</span><span class="s2">(</span><span class="s0">fft_result</span><span class="s2">) * </span><span class="s3">2 </span><span class="s2">/ </span><span class="s0">length </span><span class="s4"># normalizacija</span>
+
+    <span class="s1">return </span><span class="s0">freqs</span><span class="s2">, </span><span class="s0">amplitudes</span><hr class="ls0"><span class="s0">#%% 
+</span><span class="s1">def </span><span class="s0">compute_dft_real</span><span class="s2">(</span><span class="s0">signal</span><span class="s2">, </span><span class="s0">sample_rate</span><span class="s2">, </span><span class="s0">N</span><span class="s2">):</span>
+    <span class="s0">length </span><span class="s2">= </span><span class="s0">len</span><span class="s2">(</span><span class="s0">signal</span><span class="s2">)</span>
+    <span class="s0">time_points </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">arange</span><span class="s2">(</span><span class="s0">length</span><span class="s2">) / </span><span class="s0">sample_rate</span>
+    <span class="s0">freq_resolution </span><span class="s2">= </span><span class="s0">sample_rate </span><span class="s2">/ </span><span class="s0">length</span>
+    <span class="s0">max_bin </span><span class="s2">= </span><span class="s0">int</span><span class="s2">(</span><span class="s0">N </span><span class="s2">// </span><span class="s0">freq_resolution</span><span class="s2">) + </span><span class="s3">1</span>
+    <span class="s0">freqs </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">arange</span><span class="s2">(</span><span class="s0">max_bin</span><span class="s2">) * </span><span class="s0">freq_resolution</span>
+    <span class="s0">amplitudes </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">empty</span><span class="s2">(</span><span class="s0">len</span><span class="s2">(</span><span class="s0">freqs</span><span class="s2">))</span>
+
+    <span class="s1">for </span><span class="s0">i</span><span class="s2">, </span><span class="s0">freq </span><span class="s1">in </span><span class="s0">enumerate</span><span class="s2">(</span><span class="s0">freqs</span><span class="s2">):</span>
+        <span class="s0">real_part </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">dot</span><span class="s2">(</span><span class="s0">signal</span><span class="s2">, </span><span class="s0">np</span><span class="s2">.</span><span class="s0">cos</span><span class="s2">(</span><span class="s3">2 </span><span class="s2">* </span><span class="s0">np</span><span class="s2">.</span><span class="s0">pi </span><span class="s2">* </span><span class="s0">freq </span><span class="s2">* </span><span class="s0">time_points</span><span class="s2">))</span>
+        <span class="s0">imag_part </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">dot</span><span class="s2">(</span><span class="s0">signal</span><span class="s2">, </span><span class="s0">np</span><span class="s2">.</span><span class="s0">sin</span><span class="s2">(</span><span class="s3">2 </span><span class="s2">* </span><span class="s0">np</span><span class="s2">.</span><span class="s0">pi </span><span class="s2">* </span><span class="s0">freq </span><span class="s2">* </span><span class="s0">time_points</span><span class="s2">))</span>
+        <span class="s0">amplitudes</span><span class="s2">[</span><span class="s0">i</span><span class="s2">] = </span><span class="s0">np</span><span class="s2">.</span><span class="s0">sqrt</span><span class="s2">(</span><span class="s0">real_part</span><span class="s2">**</span><span class="s3">2 </span><span class="s2">+ </span><span class="s0">imag_part</span><span class="s2">**</span><span class="s3">2</span><span class="s2">) * </span><span class="s3">2 </span><span class="s2">/ </span><span class="s0">length </span><span class="s4"># normalizacija</span>
+
+    <span class="s1">return </span><span class="s0">freqs</span><span class="s2">, </span><span class="s0">amplitudes</span>
+<hr class="ls0"><span class="s0">#%% 
+</span><span class="s1">def </span><span class="s0">compute_dft_complex</span><span class="s2">(</span><span class="s0">signal</span><span class="s2">, </span><span class="s0">sample_rate</span><span class="s2">, </span><span class="s0">N</span><span class="s2">):</span>
+    <span class="s0">length </span><span class="s2">= </span><span class="s0">len</span><span class="s2">(</span><span class="s0">signal</span><span class="s2">)</span>
+    <span class="s0">time_points </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">arange</span><span class="s2">(</span><span class="s0">length</span><span class="s2">) / </span><span class="s0">sample_rate</span>
+    <span class="s0">freq_resolution </span><span class="s2">= </span><span class="s0">sample_rate </span><span class="s2">/ </span><span class="s0">length</span>
+    <span class="s0">max_bin </span><span class="s2">= </span><span class="s0">int</span><span class="s2">(</span><span class="s0">N </span><span class="s2">// </span><span class="s0">freq_resolution</span><span class="s2">) + </span><span class="s3">1</span>
+    <span class="s0">freqs </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">arange</span><span class="s2">(</span><span class="s0">max_bin</span><span class="s2">) * </span><span class="s0">freq_resolution</span>
+    <span class="s0">amplitudes </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">empty</span><span class="s2">(</span><span class="s0">len</span><span class="s2">(</span><span class="s0">freqs</span><span class="s2">))</span>
+
+    <span class="s1">for </span><span class="s0">i</span><span class="s2">, </span><span class="s0">freq </span><span class="s1">in </span><span class="s0">enumerate</span><span class="s2">(</span><span class="s0">freqs</span><span class="s2">):</span>
+        <span class="s0">basis </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">exp</span><span class="s2">(-</span><span class="s3">2j </span><span class="s2">* </span><span class="s0">np</span><span class="s2">.</span><span class="s0">pi </span><span class="s2">* </span><span class="s0">freq </span><span class="s2">* </span><span class="s0">time_points</span><span class="s2">)</span>
+        <span class="s0">coeff </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">dot</span><span class="s2">(</span><span class="s0">signal</span><span class="s2">, </span><span class="s0">basis</span><span class="s2">)</span>
+        <span class="s0">amplitudes</span><span class="s2">[</span><span class="s0">i</span><span class="s2">] = </span><span class="s0">np</span><span class="s2">.</span><span class="s0">abs</span><span class="s2">(</span><span class="s0">coeff</span><span class="s2">) * </span><span class="s3">2 </span><span class="s2">/ </span><span class="s0">length </span><span class="s4"># normalizacija</span>
+
+    <span class="s1">return </span><span class="s0">freqs</span><span class="s2">, </span><span class="s0">amplitudes</span><hr class="ls0"><span class="s0">#%% 
+</span><span class="s1">def </span><span class="s0">get_energy_range</span><span class="s2">(</span><span class="s0">freqs</span><span class="s2">, </span><span class="s0">amplitudes</span><span class="s2">, </span><span class="s0">energy_threshold</span><span class="s2">=</span><span class="s3">0.01</span><span class="s2">):</span>
+    <span class="s0">energy </span><span class="s2">= </span><span class="s0">amplitudes</span><span class="s2">**</span><span class="s3">2</span>
+    <span class="s0">total_energy </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">sum</span><span class="s2">(</span><span class="s0">energy</span><span class="s2">)</span>
+    <span class="s0">energy_ratio </span><span class="s2">= </span><span class="s0">energy </span><span class="s2">/ </span><span class="s0">total_energy</span>
+
+    <span class="s0">mask_energy </span><span class="s2">= </span><span class="s0">energy_ratio </span><span class="s2">&gt;= </span><span class="s0">energy_threshold</span>
+    <span class="s0">freqs_filtered </span><span class="s2">= </span><span class="s0">freqs</span><span class="s2">[</span><span class="s0">mask_energy</span><span class="s2">]</span>
+    <span class="s0">amplitudes_filtered </span><span class="s2">= </span><span class="s0">amplitudes</span><span class="s2">[</span><span class="s0">mask_energy</span><span class="s2">]</span>
+
+    <span class="s1">return </span><span class="s0">freqs_filtered</span><span class="s2">, </span><span class="s0">amplitudes_filtered</span><hr class="ls0"><span class="s0">#%% 
+</span><span class="s1">def </span><span class="s0">make_graphs</span><span class="s2">(</span><span class="s0">freqs</span><span class="s2">, </span><span class="s0">fft_data</span><span class="s2">, </span><span class="s0">dft_real</span><span class="s2">, </span><span class="s0">dft_complex</span><span class="s2">, </span><span class="s0">energy</span><span class="s2">, </span><span class="s0">filename</span><span class="s2">):</span>
+    <span class="s0">metode </span><span class="s2">= [</span>
+        <span class="s2">(</span><span class="s0">fft_data</span><span class="s2">, </span><span class="s5">&quot;FFT&quot;</span><span class="s2">, </span><span class="s5">'k'</span><span class="s2">),</span>
+        <span class="s2">(</span><span class="s0">dft_real</span><span class="s2">, </span><span class="s5">&quot;DFT Real&quot;</span><span class="s2">, </span><span class="s5">'b'</span><span class="s2">),</span>
+        <span class="s2">(</span><span class="s0">dft_complex</span><span class="s2">, </span><span class="s5">&quot;DFT Complex&quot;</span><span class="s2">, </span><span class="s5">'g'</span><span class="s2">),</span>
+    <span class="s2">]</span>
+
+    <span class="s0">plt</span><span class="s2">.</span><span class="s0">figure</span><span class="s2">(</span><span class="s0">figsize</span><span class="s2">=(</span><span class="s3">18</span><span class="s2">, </span><span class="s3">4</span><span class="s2">))</span>
+    <span class="s0">plt</span><span class="s2">.</span><span class="s0">suptitle</span><span class="s2">(</span><span class="s5">f&quot;Spektralna analiza – </span><span class="s1">{</span><span class="s0">filename</span><span class="s1">}</span><span class="s5">&quot;</span><span class="s2">, </span><span class="s0">fontsize</span><span class="s2">=</span><span class="s3">14</span><span class="s2">)</span>
+
+    <span class="s1">for </span><span class="s0">i</span><span class="s2">, (</span><span class="s0">amplitude</span><span class="s2">, </span><span class="s0">naslov</span><span class="s2">, </span><span class="s0">barva</span><span class="s2">) </span><span class="s1">in </span><span class="s0">enumerate</span><span class="s2">(</span><span class="s0">metode</span><span class="s2">, </span><span class="s0">start</span><span class="s2">=</span><span class="s3">1</span><span class="s2">):</span>
+        <span class="s0">ax </span><span class="s2">= </span><span class="s0">plt</span><span class="s2">.</span><span class="s0">subplot</span><span class="s2">(</span><span class="s3">1</span><span class="s2">, </span><span class="s3">4</span><span class="s2">, </span><span class="s0">i</span><span class="s2">)</span>
+        <span class="s0">markerline</span><span class="s2">, </span><span class="s0">stemline</span><span class="s2">, </span><span class="s0">baseline </span><span class="s2">= </span><span class="s0">ax</span><span class="s2">.</span><span class="s0">stem</span><span class="s2">(</span><span class="s0">freqs</span><span class="s2">, </span><span class="s0">amplitude</span><span class="s2">, </span><span class="s0">linefmt</span><span class="s2">=</span><span class="s0">barva </span><span class="s2">+ </span><span class="s5">'-'</span><span class="s2">, </span><span class="s0">markerfmt</span><span class="s2">=</span><span class="s0">barva </span><span class="s2">+ </span><span class="s5">'o'</span><span class="s2">, </span><span class="s0">basefmt</span><span class="s2">=</span><span class="s5">&quot; &quot;</span><span class="s2">)</span>
+        <span class="s0">markerline</span><span class="s2">.</span><span class="s0">set_markersize</span><span class="s2">(</span><span class="s3">5</span><span class="s2">)</span>
+        <span class="s0">stemline</span><span class="s2">.</span><span class="s0">set_linewidth</span><span class="s2">(</span><span class="s3">0.8</span><span class="s2">)</span>
+
+        <span class="s0">ax</span><span class="s2">.</span><span class="s0">set_title</span><span class="s2">(</span><span class="s0">naslov</span><span class="s2">)</span>
+        <span class="s0">ax</span><span class="s2">.</span><span class="s0">set_xlabel</span><span class="s2">(</span><span class="s5">&quot;Frekvenca [Hz]&quot;</span><span class="s2">)</span>
+        <span class="s1">if </span><span class="s0">i </span><span class="s2">== </span><span class="s3">1</span><span class="s2">:</span>
+            <span class="s0">ax</span><span class="s2">.</span><span class="s0">set_ylabel</span><span class="s2">(</span><span class="s5">&quot;Amplituda&quot;</span><span class="s2">)</span>
+        <span class="s0">ax</span><span class="s2">.</span><span class="s0">grid</span><span class="s2">(</span><span class="s1">True</span><span class="s2">)</span>
+        <span class="s0">ax</span><span class="s2">.</span><span class="s0">label_outer</span><span class="s2">()</span>
+
+    <span class="s0">freqs_filtered</span><span class="s2">, </span><span class="s0">amplitudes_filtered </span><span class="s2">= </span><span class="s0">energy</span>
+    <span class="s0">ax </span><span class="s2">= </span><span class="s0">plt</span><span class="s2">.</span><span class="s0">subplot</span><span class="s2">(</span><span class="s3">1</span><span class="s2">, </span><span class="s3">4</span><span class="s2">, </span><span class="s3">4</span><span class="s2">)</span>
+    <span class="s0">markerline</span><span class="s2">, </span><span class="s0">stemline</span><span class="s2">, </span><span class="s0">baseline </span><span class="s2">= </span><span class="s0">ax</span><span class="s2">.</span><span class="s0">stem</span><span class="s2">(</span><span class="s0">freqs_filtered</span><span class="s2">, </span><span class="s0">amplitudes_filtered</span><span class="s2">, </span><span class="s0">linefmt</span><span class="s2">=</span><span class="s5">'r-'</span><span class="s2">, </span><span class="s0">markerfmt</span><span class="s2">=</span><span class="s5">'ro'</span><span class="s2">,</span>
+                                             <span class="s0">basefmt</span><span class="s2">=</span><span class="s5">&quot; &quot;</span><span class="s2">)</span>
+    <span class="s0">markerline</span><span class="s2">.</span><span class="s0">set_markersize</span><span class="s2">(</span><span class="s3">5</span><span class="s2">)</span>
+    <span class="s0">stemline</span><span class="s2">.</span><span class="s0">set_linewidth</span><span class="s2">(</span><span class="s3">0.8</span><span class="s2">)</span>
+    <span class="s0">ax</span><span class="s2">.</span><span class="s0">set_title</span><span class="s2">(</span><span class="s5">&quot;Frekvence ≥ 1% energije&quot;</span><span class="s2">)</span>
+    <span class="s0">ax</span><span class="s2">.</span><span class="s0">set_xlabel</span><span class="s2">(</span><span class="s5">&quot;Frekvenca [Hz]&quot;</span><span class="s2">)</span>
+    <span class="s0">ax</span><span class="s2">.</span><span class="s0">grid</span><span class="s2">(</span><span class="s1">True</span><span class="s2">)</span>
+    <span class="s0">ax</span><span class="s2">.</span><span class="s0">label_outer</span><span class="s2">()</span>
+
+    <span class="s0">plt</span><span class="s2">.</span><span class="s0">show</span><span class="s2">()</span><hr class="ls0"><span class="s0">#%% 
+</span><span class="s1">import </span><span class="s0">os</span>
+
+<span class="s1">def </span><span class="s0">analiziraj_posnetke</span><span class="s2">(</span><span class="s0">N</span><span class="s2">=</span><span class="s3">1024</span><span class="s2">):</span>
+    <span class="s0">folder </span><span class="s2">= </span><span class="s5">'Audio'</span>
+    <span class="s0">files </span><span class="s2">= [</span><span class="s0">f </span><span class="s1">for </span><span class="s0">f </span><span class="s1">in </span><span class="s0">os</span><span class="s2">.</span><span class="s0">listdir</span><span class="s2">(</span><span class="s0">folder</span><span class="s2">) </span><span class="s1">if </span><span class="s0">f</span><span class="s2">.</span><span class="s0">lower</span><span class="s2">().</span><span class="s0">endswith</span><span class="s2">(</span><span class="s5">'.wav'</span><span class="s2">)]</span>
+    <span class="s1">for </span><span class="s0">filename </span><span class="s1">in </span><span class="s0">files</span><span class="s2">:</span>
+        <span class="s0">filepath </span><span class="s2">= </span><span class="s0">os</span><span class="s2">.</span><span class="s0">path</span><span class="s2">.</span><span class="s0">join</span><span class="s2">(</span><span class="s0">folder</span><span class="s2">, </span><span class="s0">filename</span><span class="s2">)</span>
+        <span class="s0">sample_rate</span><span class="s2">, </span><span class="s0">signal </span><span class="s2">= </span><span class="s0">read</span><span class="s2">(</span><span class="s0">filepath</span><span class="s2">)</span>
+
+        <span class="s0">y </span><span class="s2">= (</span><span class="s0">signal </span><span class="s2">/ </span><span class="s0">np</span><span class="s2">.</span><span class="s0">max</span><span class="s2">(</span><span class="s0">np</span><span class="s2">.</span><span class="s0">abs</span><span class="s2">(</span><span class="s0">signal</span><span class="s2">))).</span><span class="s0">astype</span><span class="s2">(</span><span class="s0">np</span><span class="s2">.</span><span class="s0">float32</span><span class="s2">)</span>
+
+        <span class="s0">freqs_fft</span><span class="s2">, </span><span class="s0">fft_data </span><span class="s2">= </span><span class="s0">compute_fft</span><span class="s2">(</span><span class="s0">y</span><span class="s2">, </span><span class="s0">sample_rate</span><span class="s2">, </span><span class="s0">N</span><span class="s2">)</span>
+        <span class="s0">freqs_real</span><span class="s2">, </span><span class="s0">dft_real </span><span class="s2">= </span><span class="s0">compute_dft_real</span><span class="s2">(</span><span class="s0">y</span><span class="s2">, </span><span class="s0">sample_rate</span><span class="s2">, </span><span class="s0">N</span><span class="s2">)</span>
+        <span class="s0">freqs_complex</span><span class="s2">, </span><span class="s0">dft_complex </span><span class="s2">= </span><span class="s0">compute_dft_complex</span><span class="s2">(</span><span class="s0">y</span><span class="s2">, </span><span class="s0">sample_rate</span><span class="s2">, </span><span class="s0">N</span><span class="s2">)</span>
+        <span class="s0">freqs_energy</span><span class="s2">, </span><span class="s0">amplitudes_energy </span><span class="s2">= </span><span class="s0">get_energy_range</span><span class="s2">(</span><span class="s0">freqs_fft</span><span class="s2">, </span><span class="s0">dft_real</span><span class="s2">, </span><span class="s3">0.01</span><span class="s2">)</span>
+
+        <span class="s0">make_graphs</span><span class="s2">(</span><span class="s0">freqs_fft</span><span class="s2">, </span><span class="s0">fft_data</span><span class="s2">, </span><span class="s0">dft_real</span><span class="s2">, </span><span class="s0">dft_complex</span><span class="s2">, (</span><span class="s0">freqs_energy</span><span class="s2">, </span><span class="s0">amplitudes_energy</span><span class="s2">), </span><span class="s0">filename</span><span class="s2">)</span>
+
+        <span class="s0">print</span><span class="s2">(</span><span class="s5">&quot;Frekvence z vsaj 1% energije celotnega signala:&quot;</span><span class="s2">)</span>
+        <span class="s0">print</span><span class="s2">(</span><span class="s5">&quot;, &quot;</span><span class="s2">.</span><span class="s0">join</span><span class="s2">(</span><span class="s5">f&quot;</span><span class="s1">{</span><span class="s0">f</span><span class="s1">:</span><span class="s5">.1f</span><span class="s1">} </span><span class="s5">Hz&quot; </span><span class="s1">for </span><span class="s0">f</span><span class="s2">, </span><span class="s0">a </span><span class="s1">in </span><span class="s0">zip</span><span class="s2">(</span><span class="s0">freqs_energy</span><span class="s2">, </span><span class="s0">amplitudes_energy</span><span class="s2">) </span><span class="s1">if </span><span class="s0">a </span><span class="s2">&gt; </span><span class="s3">0</span><span class="s2">))</span>
+
+<span class="s0">analiziraj_posnetke</span><span class="s2">(</span><span class="s3">5000</span><span class="s2">)</span><hr class="ls0"><span class="s0">#%% md 
+Ali lahko frekvenčno sliko signala nedvoumno določimo preko skalarnega produkta med posnetim signalom in izbrano realno sinusoido? Zakaj? 
+ 
+Ne, skalarni produkt s samo eno realno sinusoido zajame informacijo iz pozitivnih in negativnih frekvenc in je dvoumno -&gt; nemoremo izračunati ven faze in amplitude. 
+ 
+ 
+Ali lahko frekvenčno sliko signala nedvoumno določimo preko skalarnega produkta med posnetim signalom in izbrano kompleksno sinusoido? Kako na to vpliva dolžina opazovanega intervala signala? Zakaj? 
+ 
+Da, frekvenčna slika je nedvoumna, ker vsebuje samo pozitivno frekvenco, potrebujemo pa dovolj dolg opazovalni interval, da se posamezne frekvence jasno ločijo. (Heisenbergov princip čas-frekvenca) 
+ 
+ 
+Kako so frekvence, ki so prisotne v izgovorjavi samoglasnikov »a«, »i« in »o« odvisne od višine tona izgovorjave? 
+ 
+Spremeni se osnovna frekvenca, Harmonske frekvence se pomaknejo. 
+ 
+ 
+Kako se z višino tona izgovorjave spremeni pojav višjih harmonikov v frekvenčni sliki? 
+ 
+Spremenijo se razmiki med harmoni v spektru</span></pre>
+</body>
+</html>
